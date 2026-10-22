@@ -1,15 +1,17 @@
 #authentication endpoints
 
 
-from main import app
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserCreateResponse
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from app.api.deps import get_db
 from app.services.userservice import create_user
+from fastapi import APIRouter
 
 
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-@app.post("/api/v1/auth/register")
-def register(user: UserCreate, db: Session = Depends(get_db)) -> UserResponse:
+
+@router.post("/register")
+def register(user: UserCreate, db: Session = Depends(get_db)) -> UserCreateResponse:
     return create_user(user, db)

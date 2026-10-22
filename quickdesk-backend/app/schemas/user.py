@@ -10,10 +10,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     #Password should contain at least one lowercase letter, one uppercase letter, one number, and one special character
     password: str = Field(min_length=8, max_length=18, regex=r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,18}$")
-    role: UserRole = Field(default=UserRole.EMPLOYEE)
 
 
-class UserResponse(BaseModel):
+class UserCreateResponse(BaseModel):
     id: uuid.UUID
     name: str
     email: EmailStr
