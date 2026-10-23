@@ -1,6 +1,7 @@
 #testing for the authentication endpoints
 
 from app.main import app
+import pytest
 from app.core.security import get_user_id_from_access_token
 from app.core.config import settings
 from app.api.deps import get_current_user
@@ -56,7 +57,15 @@ async def test_login_success(client, db):
     assert response.status_code == 201
     login_response = await client.post("/api/v1/auth/login", json=valid_login)
     assert login_response.status_code == 200
-    assert "access_token" in login_response.cookies
+    assert login_response.json() is None
+    cookie_header = login_response.headers.get("set-cookie")
+    assert cookie_header is not None
+    cookie_properties = cookie_header.lower()
+    assert "httponly" in cookie_properties
+    assert "samesite=strict" in cookie_properties
+    assert "secure" in cookie_properties
+
+   
 
 
 async def test_login_wrong_email(client, db):
@@ -96,36 +105,32 @@ async def test_get_current_user_expired_token(client, db):
     assert login_response.status_code == 200
     access_token = login_response.cookies.get("access_token")
     time.sleep(settings.JWT_EXPIRATION_TIME + 1)
-    try:
+    with pytest.raises(HTTPException) as e:
         await get_current_user(access_token, db)
-    except HTTPException as e:
-        assert e.status_code == 401
-        assert e.detail == "Unauthorized"
+    assert e.value.status_code == 401
+    assert e.value.detail == "Unauthorized"
 
 
 async def test_get_current_user_invalid_token(client, db):
     access_token = "Unauthorized"
-    try:
+    with pytest.raises(HTTPException) as e:
         await get_current_user(access_token, db)
-    except HTTPException as e:
-        assert e.status_code == 401
-        assert e.detail == "Unauthorized"
+    assert e.value.status_code == 401
+    assert e.value.detail == "Unauthorized"
 
 async def test_get_current_user_missing_token(client, db):
-    try:
+    with pytest.raises(HTTPException) as e:
         await get_current_user(None, db)
-    except HTTPException as e:
-        assert e.status_code == 401
-        assert e.detail == "Unauthorized"
+    assert e.value.status_code == 401
+    assert e.value.detail == "Unauthorized"
 
 async def test_get_current_user_invalid_user(client, db):
     payload = {"id": "1234567890", "exp": time.time() + settings.JWT_EXPIRATION_TIME}
     access_token = create_access_token(payload)
-    try:
+    with pytest.raises(HTTPException) as e:
         await get_current_user(access_token, db)
-    except HTTPException as e:
-        assert e.status_code == 401
-        assert e.detail == "Unauthorized"
+    assert e.value.status_code == 401
+    assert e.value.detail == "Unauthorized"
 
 
 async def test_logout_success(client, db):
@@ -136,7 +141,16 @@ async def test_logout_success(client, db):
     access_token = login_response.cookies.get("access_token")
     response = await client.post("/api/v1/auth/logout", cookies={"access_token": access_token})
     assert response.status_code == 200
-    assert "access_token" not in response.cookies
+    cookie_header = response.headers.get("set-cookie")
+    assert cookie_header is not None
+    cookie_properties = cookie_header.lower()
+    assert "max-age=0" in cookie_properties
+    assert "httponly" in cookie_properties
+    assert "samesite=strict" in cookie_properties
+    assert "secure" in cookie_properties
+    
+
+
 
 async def test_logout_missing_token(client, db):
     response = await client.post("/api/v1/auth/logout", cookies={})
