@@ -51,8 +51,10 @@ async def test_login_success(client, db):
     assert response.status_code == 201
     login_response = await client.post("/api/v1/auth/login", json=valid_login)
     assert login_response.status_code == 200
-    token  = login_response.json()["access_token"]
-    assert response.json()["id"] == get_user_id_from_access_token(token)
+    access_token = login_response.cookies.get("access_token")
+    user_id = get_user_id_from_access_token(access_token)
+    assert user_id is not None
+    assert user_id == response.json()["id"]
 
 
 async def test_login_wrong_email(client, db):

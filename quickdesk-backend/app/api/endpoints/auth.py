@@ -9,6 +9,7 @@ from app.api.deps import get_db
 from fastapi import APIRouter
 from fastapi import status
 from app.services.authservice import login_user, create_user
+from fastapi import Response
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -19,9 +20,9 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)) -> User
     return await create_user(user, db)
 
 
-@router.post("/login" , status_code=status.HTTP_200_OK , response_model=Token)
-async def login(user: UserLogin, db: AsyncSession = Depends(get_db)) -> Token:
+@router.post("/login" , status_code=status.HTTP_200_OK)
+async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(get_db)) -> None:
     token =  await login_user(user, db)
-    #add token in response cookie
-    return token
+    response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict")
+    return
 
