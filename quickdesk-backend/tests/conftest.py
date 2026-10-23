@@ -34,7 +34,6 @@ async def db():
         await session.close()
         await transaction.rollback()
         await connection.close()
-        await engine.dispose()
     
     
 
