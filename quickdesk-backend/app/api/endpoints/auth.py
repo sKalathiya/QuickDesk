@@ -23,6 +23,6 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)) -> User
 @router.post("/login" , status_code=status.HTTP_200_OK)
 async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(get_db)) -> None:
     token =  await login_user(user, db)
-    response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict")
+    response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict", secure=True)
     return
 

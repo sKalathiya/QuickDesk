@@ -16,16 +16,18 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(payload: dict) -> str:
+    if "id" not in payload or "exp" not in payload:
+        raise ValueError("Payload missing required claim information!")
     try:
         return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    except Exception as e:
+    except TypeError as e:
         raise HTTPException(status_code=500, detail="Internal Server Error") from e
 
 
 
 def get_user_id_from_access_token(token:str) -> str:
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, settings.JWT_ALGORITHM)
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM], options={"require": ["id", "exp"]})
         return payload["id"]
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token") from e
+    except (jwt.ExpiredSignatureError , jwt.InvalidTokenError, jwt.MissingRequiredClaimError) as e:
+        raise HTTPException(status_code=401, detail="Unauthorized") from e
