@@ -3,9 +3,9 @@
 from fastapi.exceptions import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.status import HTTP_401_UNAUTHORIZED
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 from app.core.database import SessionLocal
-from app.models.user import User
+from app.models.user import User, UserRole
 from fastapi import Cookie, Depends
 from app.core.security import get_user_id_from_access_token
 import uuid
@@ -25,4 +25,10 @@ async def get_current_user(access_token: str = Cookie(default=None), db: AsyncSe
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")
+    return user
+
+
+async def get_current_agent_user(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.AGENT:
+        raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
     return user

@@ -11,7 +11,7 @@ from fastapi import status
 from app.services.authservice import login_user, create_user
 from fastapi import Response
 from app.models.user import User
-from app.api.deps import get_current_user
+from app.api.deps import get_current_agent_user, get_current_user
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -32,3 +32,7 @@ async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(
 async def logout(response: Response, current_user: User = Depends(get_current_user)) -> None:
     response.delete_cookie(key="access_token", httponly=True, samesite="strict", secure=True)
     return
+
+@router.get("/me/agent", status_code=status.HTTP_200_OK, response_model=UserResponse)
+async def get_current_agent_user(current_user: User = Depends(get_current_agent_user)) -> UserResponse:
+    return UserResponse(id=str(current_user.id), name=current_user.name, email=current_user.email, role=current_user.role)
