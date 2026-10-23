@@ -23,7 +23,7 @@ async def get_current_user(access_token: str = Cookie(default=None), db: AsyncSe
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized") from e
     result = await db.execute(select(User).where(User.id == user_id).limit(1))
     user = result.scalar_one_or_none()
-    if not user:
+    if not user or not user.isActive:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")
     return user
 

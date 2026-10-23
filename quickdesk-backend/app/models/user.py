@@ -4,6 +4,13 @@ from app.core.database import Base
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
 from datetime import datetime
+from typing import List
+from sqlalchemy.orm import relationship
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .ticket import Ticket  
 
 class UserRole(enum.Enum):
     AGENT = "agent"
@@ -15,8 +22,13 @@ class User(Base):
     name: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(nullable=False, unique=True)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
+    isActive: Mapped[bool] = mapped_column(nullable=False, default=True)
     role: Mapped[UserRole] = mapped_column(nullable=False, default=UserRole.EMPLOYEE)
     created_at: Mapped[datetime] = mapped_column(nullable=False, default=func.now())
+    tickets: Mapped[List["Ticket"]] = relationship("Ticket", back_populates="created_by")
+
+    class Config:
+        from_attributes = True
 
 
 

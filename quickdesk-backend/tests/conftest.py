@@ -5,6 +5,13 @@ from app.core.database import Base
 from httpx import AsyncClient, ASGITransport
 from app.api.deps import get_db
 from app.main import app
+import time
+import uuid
+from app.core.config import settings
+from app.core.security import create_access_token
+from app.models.user import User, UserRole
+from app.core.security import hash_password
+from httpx import Response
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -51,3 +58,61 @@ async def client(db):
             yield client
     finally:
         app.dependency_overrides.clear()
+
+
+
+
+# data and usbale functions
+
+valid_ticket_data = {
+    "title": "Test Ticket",
+    "description": "This is a test ticket",
+    "fileName": "test.pdf",
+}
+
+valid_user_data = {
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "Test1234!",
+}
+
+valid_user_login_data = {
+    "email": "test@example.com",
+    "password": "Test1234!",
+}
+
+valid_agent_login = {
+    "email": "agent@test.com",
+    "password": "Agent1234!"
+}  
+
+async def login_user(client) -> Response:
+    register_response = await client.post("/api/v1/auth/register", json=valid_user_data)
+    assert register_response.status_code == 201
+    login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
+    assert login_response.status_code == 200
+    return login_response
+
+def generate_invalid_token() -> str:
+    payload = {
+        "id": str(uuid.uuid4()),
+        "exp": time.time() + settings.JWT_EXPIRATION_TIME,
+    }
+    token = create_access_token(payload)
+    return token
+
+def generate_expired_token() -> str:
+    payload = {
+        "id": str(uuid.uuid4()),
+        "exp": time.time() - 1000,
+    }
+    token = create_access_token(payload)
+    return token
+
+
+async def add_agent_user_to_database(db):
+    agent_user = User(id=uuid.uuid4(), name="agent", email="agent@test.com", hashed_password=hash_password("Agent1234!"), role=UserRole.AGENT)
+    db.add(agent_user)
+    await db.commit()
+    return agent_user
+
