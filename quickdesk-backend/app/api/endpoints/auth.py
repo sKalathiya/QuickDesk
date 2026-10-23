@@ -21,4 +21,7 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)) -> User
 
 @router.post("/login" , status_code=status.HTTP_200_OK , response_model=Token)
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)) -> Token:
-    return await login_user(user, db)
+    token =  await login_user(user, db)
+    #add token in response cookie
+    return token
+

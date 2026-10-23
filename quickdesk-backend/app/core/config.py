@@ -10,5 +10,8 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_PORT: int
     POSTGRES_HOST: str
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_EXPIRATION_TIME: int
 
 settings = Settings()

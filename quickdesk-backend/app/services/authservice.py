@@ -5,11 +5,13 @@ from app.schemas.auth import UserLogin
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.user import User
-from app.core.security import verify_password
+from app.core.security import verify_password, create_access_token
 from app.schemas.auth import UserCreate
 from app.schemas.user import UserResponse
 from app.core.security import hash_password
 from fastapi import status
+import time
+from app.core.config import settings
 
 #Create a new user and return the user details with status code 201
 async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
@@ -21,7 +23,7 @@ async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    return UserResponse(id=new_user.id, name=new_user.name, email=new_user.email, role=new_user.role)
+    return UserResponse(id=str(new_user.id), name=new_user.name, email=new_user.email, role=new_user.role)
 
 
 async def login_user(user: UserLogin, db: AsyncSession) -> Token:
@@ -33,6 +35,6 @@ async def login_user(user: UserLogin, db: AsyncSession) -> Token:
     if not db_password:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Invalid email or password!")
     
-    #JWT code
-
-    return Token(access_token="sdsd" , expires_in=20)
+    payload = {"id": str(db_user.id), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+    access_token = create_access_token(payload)
+    return Token(access_token=access_token)

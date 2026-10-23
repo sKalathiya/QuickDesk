@@ -3,8 +3,6 @@ import re
 
 class Token(BaseModel):
     access_token: str
-    expires_in: int
-
 
 class UserLogin(BaseModel):
     email: EmailStr

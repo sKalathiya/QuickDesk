@@ -1,6 +1,7 @@
 #testing for the authentication endpoints
 
 from app.main import app
+from app.core.security import get_user_id_from_access_token
 
 valid_user = {
     "name": "test",
@@ -48,8 +49,10 @@ async def test_register_invalid_password(client, db):
 async def test_login_success(client, db):
     response = await client.post("/api/v1/auth/register", json=valid_user)
     assert response.status_code == 201
-    response = await client.post("/api/v1/auth/login", json=valid_login)
-    assert response.status_code == 200
+    login_response = await client.post("/api/v1/auth/login", json=valid_login)
+    assert login_response.status_code == 200
+    token  = login_response.json()["access_token"]
+    assert response.json()["id"] == get_user_id_from_access_token(token)
 
 
 async def test_login_wrong_email(client, db):
