@@ -119,7 +119,7 @@ async def test_get_current_user_missing_token(client, db):
         assert e.detail == "Unauthorized"
 
 async def test_get_current_user_invalid_user(client, db):
-    payload = {"id": "1234567890", "exp": time.time() - 1}
+    payload = {"id": "1234567890", "exp": time.time() + settings.JWT_EXPIRATION_TIME}
     access_token = create_access_token(payload)
     try:
         await get_current_user(access_token, db)
@@ -127,3 +127,41 @@ async def test_get_current_user_invalid_user(client, db):
         assert e.status_code == 401
         assert e.detail == "Unauthorized"
 
+
+async def test_logout_success(client, db):
+    register_response = await client.post("/api/v1/auth/register", json=valid_user)
+    assert register_response.status_code == 201
+    login_response = await client.post("/api/v1/auth/login", json=valid_login)
+    assert login_response.status_code == 200
+    access_token = login_response.cookies.get("access_token")
+    response = await client.post("/api/v1/auth/logout", cookies={"access_token": access_token})
+    assert response.status_code == 200
+    assert "access_token" not in response.cookies
+
+async def test_logout_missing_token(client, db):
+    response = await client.post("/api/v1/auth/logout", cookies={})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+async def test_logout_invalid_token(client, db):
+    response = await client.post("/api/v1/auth/logout", cookies={"access_token": "Invalid Token"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+async def test_logout_expired_token(client, db):
+    register_response = await client.post("/api/v1/auth/register", json=valid_user)
+    assert register_response.status_code == 201
+    login_response = await client.post("/api/v1/auth/login", json=valid_login)
+    assert login_response.status_code == 200
+    access_token = login_response.cookies.get("access_token")
+    time.sleep(settings.JWT_EXPIRATION_TIME + 1)
+    response = await client.post("/api/v1/auth/logout", cookies={"access_token": access_token})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"
+
+async def test_logout_invalid_or_missing_user(client, db):
+    payload = {"id": "1234567890", "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+    access_token = create_access_token(payload)
+    response = await client.post("/api/v1/auth/logout", cookies={"access_token": access_token})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Unauthorized"

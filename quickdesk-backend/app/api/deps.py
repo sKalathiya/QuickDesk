@@ -17,8 +17,11 @@ async def get_db():
 async def get_current_user(access_token: str = Cookie(default=None), db: AsyncSession = Depends(get_db)) -> User:
     if not access_token:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")
-    user_id = get_user_id_from_access_token(access_token)
-    result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)).limit(1))
+    try:
+        user_id = uuid.UUID(get_user_id_from_access_token(access_token))
+    except ValueError as e:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized") from e
+    result = await db.execute(select(User).where(User.id == user_id).limit(1))
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")

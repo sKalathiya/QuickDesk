@@ -10,6 +10,8 @@ from fastapi import APIRouter
 from fastapi import status
 from app.services.authservice import login_user, create_user
 from fastapi import Response
+from app.models.user import User
+from app.api.deps import get_current_user
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -26,3 +28,7 @@ async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(
     response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict", secure=True)
     return
 
+@router.post("/logout", status_code = status.HTTP_200_OK)
+async def logout(response: Response, current_user: User = Depends(get_current_user)) -> None:
+    response.delete_cookie(key="access_token")
+    return
