@@ -37,3 +37,15 @@ async def get_current_employee_user(user: User = Depends(get_current_user)) -> U
     if user.role != UserRole.EMPLOYEE:
         raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
     return user
+
+
+class Pagination:
+    def __init__(self, skip: int = 0, limit: int = 10):
+        self.skip = skip
+        self.limit = limit
+
+    def get_skip(self):
+        return self.skip
+
+    def get_limit(self):
+        return self.limit

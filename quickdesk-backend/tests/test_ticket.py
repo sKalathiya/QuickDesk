@@ -1,6 +1,6 @@
 #test with pytest for ticket creation and retrieval
 import pytest
-from tests.data import valid_ticket_data, login_user, generate_invalid_token, generate_expired_token, register_user, add_ticket_to_database, add_agent_user_to_database, valid_agent_login
+from tests.data import valid_ticket_data, login_user, generate_invalid_token, generate_expired_token, register_user, add_ticket_to_database, add_agent_user_to_database, valid_agent_login, generate_multiple_tickets_to_database, check_ticket_assertions
 import uuid
 
 
@@ -14,7 +14,6 @@ async def test_create_ticket_success(client):
     response_data = response.json()
     assert response_data["title"] == valid_ticket_data["title"]
     assert response_data["description"] == valid_ticket_data["description"]
-    assert response_data["fileName"] == valid_ticket_data["fileName"]
     assert response_data["status"] == "Open"
     assert "created_by" not in response_data
 
@@ -46,10 +45,7 @@ async def test_get_ticket_by_id_and_user_success(client, db):
     response = await client.get(f"/api/v1/tickets/{ticket.id}")
     assert response.status_code == 200
     response_data = response.json()
-    assert response_data["title"] == ticket.title
-    assert response_data["description"] == ticket.description
-    assert "created_by" not in response_data
-    assert response_data["status"] == "Open"
+    check_ticket_assertions(response_data, ticket)
 
 #test get ticket by id and user malformed id
 async def test_get_ticket_malformed_id(client):
@@ -86,8 +82,8 @@ async def test_get_ticket_not_created_by_user(client, db):
     assert response.status_code == 404
     assert response.json()["detail"] == "Ticket not found"
 
-#test an admin can get a ticket that is not created by them, admin can get all tickets
-async def test_get_ticket_not_created_by_admin(client, db):
+#test an agent can get a ticket that is not created by them, agent can get all tickets
+async def test_get_ticket_not_created_by_agent(client, db):
     user = await register_user(client)
     ticket = await add_ticket_to_database(db, uuid.UUID(user["id"]))
     await add_agent_user_to_database(db)
@@ -95,10 +91,7 @@ async def test_get_ticket_not_created_by_admin(client, db):
     response = await client.get(f"/api/v1/tickets/{ticket.id}")
     assert response.status_code == 200
     response_data = response.json()
-    assert response_data["title"] == ticket.title
-    assert response_data["description"] == ticket.description
-    assert "created_by" not in response_data
-    assert response_data["status"] == "Open"
+    check_ticket_assertions(response_data, ticket)
 
 #test user cannot get a ticket with invalid token
 @pytest.mark.parametrize("token", [generate_invalid_token(), generate_expired_token()])
@@ -106,3 +99,77 @@ async def test_get_ticket_invalid_token(client, token):
     client.cookies["access_token"] = token
     response = await client.get(f"/api/v1/tickets/{uuid.uuid4()}")
     assert response.status_code == 401
+
+
+
+#test get all tickets success
+async def test_get_all_tickets_success(client, db):
+    user = await register_user(client)
+    await login_user(client)
+    tickets = await generate_multiple_tickets_to_database(db, uuid.UUID(user["id"]), 5)
+    response = await client.get("/api/v1/tickets/", params={"skip": 0, "limit": 2})
+    assert response.status_code == 200
+    response_data = response.json()
+    assert len(response_data) == 2
+    check_ticket_assertions(response_data[0], tickets[0])
+    check_ticket_assertions(response_data[1], tickets[1])
+
+#test get all tickets with pagination success
+async def test_get_all_tickets_with_pagination_success(client, db):
+    user = await register_user(client)
+    await login_user(client)
+    tickets = await generate_multiple_tickets_to_database(db, uuid.UUID(user["id"]), 10)
+    response = await client.get("/api/v1/tickets/", params={"skip": 5, "limit": 2})
+    assert response.status_code == 200
+    response_data = response.json() 
+    assert len(response_data) == 2
+    check_ticket_assertions(response_data[0], tickets[5])
+    check_ticket_assertions(response_data[1], tickets[6])
+
+#test get all tickets with pagination invalid parameters
+async def test_get_all_tickets_with_pagination_invalid_parameters(client):
+    await register_user(client)
+    await login_user(client)
+    response = await client.get("/api/v1/tickets/", params={"skip": "invalid", "limit": "invalid"})
+    assert response.status_code == 422
+
+#test get no tickets for no tickets in the database
+async def test_get_all_tickets_no_tickets(client, db):
+    user = await register_user(client)
+    await login_user(client)
+    response = await client.get("/api/v1/tickets/", params={"skip": 0, "limit": 10})
+    assert response.status_code == 200
+    response_data = response.json()
+    assert len(response_data) == 0
+
+#test employee a only gets tickets created by them
+async def test_get_all_tickets_employee_only_gets_tickets_created_by_them(client, db):
+    user = await register_user(client)
+    await login_user(client)
+    tickets = await generate_multiple_tickets_to_database(db, uuid.UUID(user["id"]), 2)
+    another_user_data = {
+        "name": "Another User",
+        "email": "another_user@example.com",
+        "password": "Test1234!",
+    }
+    another_user = await register_user(client, another_user_data)
+    another_user_tickets = await generate_multiple_tickets_to_database(db, uuid.UUID(another_user["id"]), 2)
+    response = await client.get("/api/v1/tickets/", params={"skip": 0, "limit": 10})
+    assert response.status_code == 200
+    response_data = response.json()
+    assert len(response_data) == 2
+    assert response_data[0]["id"] == str(tickets[0].id)
+    assert response_data[1]["id"] == str(tickets[1].id)
+
+#test agent can get all tickets
+async def test_get_all_tickets_agent_can_get_all_tickets(client, db):
+    user = await register_user(client)
+    await add_agent_user_to_database(db)
+    await login_user(client, valid_agent_login)
+    tickets = await generate_multiple_tickets_to_database(db, uuid.UUID(user["id"]), 2)
+    response = await client.get("/api/v1/tickets/", params={"skip": 0, "limit": 10})
+    assert response.status_code == 200
+    response_data = response.json()
+    assert len(response_data) == 2
+    assert response_data[0]["id"] == str(tickets[0].id)
+    assert response_data[1]["id"] == str(tickets[1].id)

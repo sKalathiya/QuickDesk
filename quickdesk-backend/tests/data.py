@@ -79,4 +79,26 @@ async def add_ticket_to_database(db: AsyncSession, user_id: uuid.UUID):
     await db.refresh(ticket)
     return TicketResponse.model_validate(ticket)
 
+async def generate_multiple_tickets_to_database(db: AsyncSession, user_id: uuid.UUID, count: int = 10):
+    tickets = []
+    for _ in range(count):
+        ticket = await add_ticket_to_database(db, user_id)
+        tickets.append(ticket)
+    return tickets
+
+def check_ticket_assertions(ticket: dict, expected_ticket: TicketResponse):
+    print(ticket)
+    print(expected_ticket)
+    assert ticket["id"] == str(expected_ticket.id)
+    assert ticket["title"] == expected_ticket.title
+    assert ticket["description"] == expected_ticket.description
+    assert ticket["status"] == "Open"
+    assert "created_by" not in ticket
+
+
+
+
+
+
+
 
