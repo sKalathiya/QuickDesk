@@ -1,10 +1,11 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 import re
 
 class Token(BaseModel):
     access_token: str
 
 class UserLogin(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
     email: EmailStr
     password: str
 
@@ -13,6 +14,7 @@ class UserLogin(BaseModel):
 PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$")
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
     name: str = Field(min_length=1, max_length=50)
     email: EmailStr
     password: str = Field(min_length=8, max_length=18, pattern=PASSWORD_REGEX)

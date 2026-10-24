@@ -6,7 +6,7 @@ from app.api.deps import get_current_user
 import time
 from fastapi.exceptions import HTTPException
 from app.core.security import create_access_token
-from tests.conftest import valid_user_data, valid_user_login_data, valid_agent_login, add_agent_user_to_database, login_user
+from tests.conftest import valid_user_data, valid_user_login_data, valid_agent_login, add_agent_user_to_database, login_user, register_user
  
 #Registering a user
 
@@ -41,9 +41,9 @@ async def test_register_validation(client, payload, expected_status, expected_ms
 #Logging in a user
 
 async def test_login_success(client):
-    response = await client.post("/api/v1/auth/register", json=valid_user_data)
+    response = await register_user(client)
     assert response.status_code == 201
-    login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
+    login_response = await login_user(client)
     assert login_response.status_code == 200
     assert login_response.json() is None
     cookie_header = login_response.headers.get("set-cookie")
@@ -64,7 +64,7 @@ async def test_login_success(client):
 )
 async def test_login_failures(client, login_json, expected_status, expected_msg):
     if login_json:
-        await client.post("/api/v1/auth/register", json=valid_user_data)
+        await register_user(client)
     response = await client.post("/api/v1/auth/login", json=login_json)
     assert response.status_code == expected_status
     if expected_msg is not None:
@@ -74,9 +74,9 @@ async def test_login_failures(client, login_json, expected_status, expected_msg)
 #Getting the current user
 
 async def test_get_current_user_success(client, db):
-    register_response = await client.post("/api/v1/auth/register", json=valid_user_data)
+    register_response = await register_user(client)
     assert register_response.status_code == 201
-    login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
+    login_response = await login_user(client)
     assert login_response.status_code == 200
     access_token = login_response.cookies.get("access_token")
     user = await get_current_user(access_token, db)
@@ -84,9 +84,9 @@ async def test_get_current_user_success(client, db):
     assert str(user.id) == register_response.json()["id"]
 
 async def test_get_current_user_expired_token(client, db):
-    response = await client.post("/api/v1/auth/register", json=valid_user_data)
+    response = await register_user(client)
     assert response.status_code == 201
-    login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
+    login_response = await login_user(client)
     assert login_response.status_code == 200
     access_token = login_response.cookies.get("access_token")
     time.sleep(settings.JWT_EXPIRATION_TIME + 1)
@@ -117,6 +117,7 @@ async def test_get_current_user_invalid_cases(db, access_token, generate_token, 
 #Logging out a user
 
 async def test_logout_success(client):
+    await register_user(client)
     await login_user(client)
     response = await client.post("/api/v1/auth/logout")
     assert response.status_code == 200
@@ -141,6 +142,7 @@ async def test_logout_invalid_token(client):
     assert response.json()["detail"] == "Unauthorized"
 
 async def test_logout_expired_token(client):
+    await register_user(client)
     await login_user(client)
     time.sleep(settings.JWT_EXPIRATION_TIME + 1)
     response = await client.post("/api/v1/auth/logout")
@@ -160,7 +162,7 @@ async def test_logout_invalid_or_missing_user(client):
 
 async def test_get_current_agent_user_success(client, db):
     agent_user = await add_agent_user_to_database(db)
-    login_response = await client.post("/api/v1/auth/login", json=valid_agent_login)
+    login_response = await login_user(client, valid_agent_login)
     assert login_response.status_code == 200
     response = await client.get("/api/v1/auth/me/agent")
     assert response.status_code == 200
@@ -168,6 +170,7 @@ async def test_get_current_agent_user_success(client, db):
 
 
 async def test_get_current_agent_user_with_non_agent_user(client):
+    await register_user(client)
     await login_user(client)
     response = await client.get("/api/v1/auth/me/agent")
     assert response.status_code == 403

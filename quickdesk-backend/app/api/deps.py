@@ -32,3 +32,8 @@ async def get_current_agent_user(user: User = Depends(get_current_user)) -> User
     if user.role != UserRole.AGENT:
         raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
     return user
+
+async def get_current_employee_user(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.EMPLOYEE:
+        raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
+    return user

@@ -1,13 +1,14 @@
 #Pydantic Schema for user
 
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from app.models.user import UserRole
 from datetime import datetime
 import uuid
 
 class UserBase(BaseModel):
-    name: str
+    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
+    name: str = Field(..., min_length=1, max_length=50)
     email: EmailStr
 
 class UserResponse(UserBase):

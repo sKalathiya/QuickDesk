@@ -7,6 +7,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 from typing import TYPE_CHECKING
+from pydantic import ConfigDict
 
 # This is only True for IDEs/Linters; it is False during app execution
 if TYPE_CHECKING:
@@ -45,5 +46,4 @@ class Ticket(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_by: Mapped["User"] = relationship("User", back_populates="tickets" )
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

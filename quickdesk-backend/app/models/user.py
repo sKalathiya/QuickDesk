@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List
 from sqlalchemy.orm import relationship
 from typing import TYPE_CHECKING
+from pydantic import ConfigDict
 
 
 if TYPE_CHECKING:
@@ -27,8 +28,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False, default=func.now())
     tickets: Mapped[List["Ticket"]] = relationship("Ticket", back_populates="created_by")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 

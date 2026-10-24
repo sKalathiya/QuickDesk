@@ -2,6 +2,10 @@ from app.schemas.ticket import TicketCreate, TicketResponse
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ticket import Ticket
+from sqlalchemy import select
+from fastapi import HTTPException
+from fastapi import status
+import uuid
 
 
 async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> TicketResponse:
@@ -14,16 +18,24 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> T
     db.add(new_ticket)
     await db.commit()
     await db.refresh(new_ticket)
-    return TicketResponse(
-        id=str(new_ticket.id), 
-        title=new_ticket.title, 
-        description=new_ticket.description, 
-        fileName=new_ticket.fileName if new_ticket.fileName else None, 
-        resolutionTime=new_ticket.resolutionTime if new_ticket.resolutionTime else None, 
-        resolutionDescription=new_ticket.resolutionDescription if new_ticket.resolutionDescription else None, 
-        status=new_ticket.status, 
-        priority=new_ticket.priority if new_ticket.priority else None, 
-        category=new_ticket.category if new_ticket.category else None, 
-        created_at=new_ticket.created_at, 
-        updated_at=new_ticket.updated_at,
-    )
+    return TicketResponse.model_validate(new_ticket)
+
+
+async def get_tickets_by_user(user: User, db: AsyncSession) -> list[TicketResponse]:
+    result = await db.execute(select(Ticket).where(Ticket.user_id == user.id))
+    tickets = result.scalars().all()
+
+    return [TicketResponse.model_validate(ticket) for ticket in tickets]
+
+
+async def get_ticket_by_id_and_user(ticket_id: str, user: User, db: AsyncSession) -> TicketResponse:
+    try:
+        ticket_id = uuid.UUID(ticket_id)
+    except (ValueError, AttributeError) as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid ticket ID") from e
+    result = await db.execute(select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == user.id).limit(1))
+    ticket = result.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    return TicketResponse.model_validate(ticket)
+

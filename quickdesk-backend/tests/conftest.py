@@ -12,6 +12,8 @@ from app.core.security import create_access_token
 from app.models.user import User, UserRole
 from app.core.security import hash_password
 from httpx import Response
+from app.models.ticket import Ticket
+from sqlalchemy.ext.asyncio import AsyncSession
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -86,10 +88,13 @@ valid_agent_login = {
     "password": "Agent1234!"
 }  
 
-async def login_user(client) -> Response:
-    register_response = await client.post("/api/v1/auth/register", json=valid_user_data)
+async def register_user(client, user_data: dict = valid_user_data) -> Response:
+    register_response = await client.post("/api/v1/auth/register", json=user_data)
     assert register_response.status_code == 201
-    login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
+    return register_response
+
+async def login_user(client , user_data: dict = valid_user_login_data) -> Response:
+    login_response = await client.post("/api/v1/auth/login", json=user_data)
     assert login_response.status_code == 200
     return login_response
 
@@ -115,4 +120,12 @@ async def add_agent_user_to_database(db):
     db.add(agent_user)
     await db.commit()
     return agent_user
+
+async def add_ticket_to_database(db: AsyncSession, user_id: uuid.UUID):
+    ticket = Ticket(id=uuid.uuid4(), title="Test Ticket", description="This is a test ticket", user_id=user_id)
+    db.add(ticket)
+    await db.commit()
+    await db.refresh(ticket)
+    return ticket
+
 
