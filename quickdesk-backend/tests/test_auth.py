@@ -6,7 +6,7 @@ from app.api.deps import get_current_user
 import time
 from fastapi.exceptions import HTTPException
 from app.core.security import create_access_token
-from tests.conftest import valid_user_data, valid_user_login_data, valid_agent_login, add_agent_user_to_database, login_user, register_user
+from tests.data import valid_user_data, valid_user_login_data, valid_agent_login, add_agent_user_to_database, login_user, register_user
  
 #Registering a user
 

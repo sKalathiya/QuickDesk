@@ -6,6 +6,7 @@ from sqlalchemy import select
 from fastapi import HTTPException
 from fastapi import status
 import uuid
+from app.models.user import UserRole
 
 
 async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> TicketResponse:
@@ -22,19 +23,20 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> T
 
 
 async def get_tickets_by_user(user: User, db: AsyncSession) -> list[TicketResponse]:
-    result = await db.execute(select(Ticket).where(Ticket.user_id == user.id))
-    tickets = result.scalars().all()
-
+    tickets = await db.scalars(select(Ticket).where(Ticket.user_id == user.id))
     return [TicketResponse.model_validate(ticket) for ticket in tickets]
 
 
-async def get_ticket_by_id_and_user(ticket_id: str, user: User, db: AsyncSession) -> TicketResponse:
+async def get_ticket_by_id(ticket_id: str, user: User, db: AsyncSession) -> TicketResponse:
     try:
         ticket_id = uuid.UUID(ticket_id)
     except (ValueError, AttributeError) as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid ticket ID") from e
-    result = await db.execute(select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == user.id).limit(1))
-    ticket = result.scalar_one_or_none()
+    if user.role == UserRole.EMPLOYEE:
+        stmt = select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == user.id).limit(1)
+    else:
+        stmt = select(Ticket).where(Ticket.id == ticket_id).limit(1)
+    ticket = await db.scalar(stmt)
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
     return TicketResponse.model_validate(ticket)

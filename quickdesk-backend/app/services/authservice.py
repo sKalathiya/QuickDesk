@@ -15,20 +15,19 @@ from app.core.config import settings
 
 #Create a new user and return the user details with status code 201
 async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
-    existing_user = await db.execute(select(User).where(User.email == user.email).limit(1))
-    if existing_user.scalar_one_or_none() is not None:
+    existing_user = await db.scalar(select(User).where(User.email == user.email).limit(1))
+    if existing_user is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
     hashed_password = hash_password(user.password)
     new_user = User(name=user.name, email=user.email, hashed_password=hashed_password)
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    return UserResponse(id=str(new_user.id), name=new_user.name, email=new_user.email, role=new_user.role)
+    return UserResponse.model_validate(new_user)
 
 
 async def login_user(user: UserLogin, db: AsyncSession) -> Token:
-    result = await db.execute(select(User).where(User.email == user.email).limit(1))
-    db_user = result.scalar_one_or_none()
+    db_user = await db.scalar(select(User).where(User.email == user.email).limit(1))
     if not db_user:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Invalid email or password!")
     db_password = verify_password(user.password , db_user.hashed_password)
