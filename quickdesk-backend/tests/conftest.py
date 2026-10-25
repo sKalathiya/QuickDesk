@@ -28,7 +28,7 @@ async def db():
     
     connection = await engine.connect()
     transaction = await connection.begin()
-    session = TestingSessionLocal(bind=connection)
+    session = TestingSessionLocal(bind=connection , join_transaction_mode="create_savepoint")
     try:
         yield session
     finally:

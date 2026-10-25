@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy.orm import mapped_column, Mapped
 from app.core.database import Base
 import datetime
-from enum import Enum
+from enum import StrEnum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
@@ -13,22 +13,24 @@ from pydantic import ConfigDict
 if TYPE_CHECKING:
     from .user import User  
 
-class TicketCategory(Enum):
+class TicketCategory(StrEnum):
     IT = "IT"
     HR = "HR"
-    FINANCE = "Finance"
-    ADMIN = "Admin"
-    OTHER = "Other"
+    FINANCE = "FINANCE"
+    ADMIN = "ADMIN"
+    OTHER = "OTHER"
+    NOT_SPECIFIED = "NOT_SPECIFIED"
 
-class TicketPriority(Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
+class TicketPriority(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    NOT_SPECIFIED = "NOT_SPECIFIED"
 
-class TicketStatus(Enum):
-    OPEN = "Open"
-    IN_PROGRESS = "In Progress"
-    RESOLVED = "Resolved"
+class TicketStatus(StrEnum):
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
 
 class Ticket(Base):
     __tablename__ = "tickets"
@@ -39,11 +41,11 @@ class Ticket(Base):
     resolutionTime: Mapped[int] = mapped_column(nullable=True)
     resolutionDescription: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.now())
-    updated_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.now(), onupdate=func.now())
     status: Mapped[TicketStatus] = mapped_column(nullable=False, default=TicketStatus.OPEN)
-    priority: Mapped[TicketPriority] = mapped_column(nullable=True)
-    category: Mapped[TicketCategory] = mapped_column(nullable=True)
+    priority: Mapped[TicketPriority] = mapped_column( nullable=False, default=TicketPriority.NOT_SPECIFIED)
+    category: Mapped[TicketCategory] = mapped_column(nullable=False, default=TicketCategory.NOT_SPECIFIED)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_by: Mapped["User"] = relationship("User", back_populates="tickets" )
 
-    model_config = ConfigDict(from_attributes=True)
+    

@@ -2,18 +2,18 @@ from sqlalchemy import func
 import uuid
 from app.core.database import Base
 from sqlalchemy.orm import Mapped, mapped_column
-import enum
 from datetime import datetime
 from typing import List
 from sqlalchemy.orm import relationship
 from typing import TYPE_CHECKING
 from pydantic import ConfigDict
+from enum import StrEnum
 
 
 if TYPE_CHECKING:
     from .ticket import Ticket  
 
-class UserRole(enum.Enum):
+class UserRole(StrEnum):
     AGENT = "agent"
     EMPLOYEE = "employee"
 
@@ -28,7 +28,6 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False, default=func.now())
     tickets: Mapped[List["Ticket"]] = relationship("Ticket", back_populates="created_by")
 
-    model_config = ConfigDict(from_attributes=True)
 
 
 

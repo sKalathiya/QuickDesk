@@ -28,7 +28,7 @@ async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
 
 async def login_user(user: UserLogin, db: AsyncSession) -> Token:
     db_user = await db.scalar(select(User).where(User.email == user.email).limit(1))
-    if not db_user:
+    if not db_user or not db_user.isActive:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Invalid email or password!")
     db_password = verify_password(user.password , db_user.hashed_password)
     if not db_password:

@@ -47,7 +47,7 @@ class Pagination:
             raise HTTPException(status_code=HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid limit parameter")
         if limit > 100:
             raise HTTPException(status_code=HTTP_422_UNPROCESSABLE_CONTENT, detail="Limit parameter must be less than 100")
-            
+
         self.skip = skip
         self.limit = limit
 

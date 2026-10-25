@@ -14,7 +14,7 @@ async def test_create_ticket_success(client):
     response_data = response.json()
     assert response_data["title"] == valid_ticket_data["title"]
     assert response_data["description"] == valid_ticket_data["description"]
-    assert response_data["status"] == "Open"
+    assert response_data["status"] == "OPEN"
     assert "created_by" not in response_data
 
 #test create ticket with missing fields

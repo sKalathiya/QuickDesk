@@ -92,7 +92,7 @@ def check_ticket_assertions(ticket: dict, expected_ticket: TicketResponse):
     assert ticket["id"] == str(expected_ticket.id)
     assert ticket["title"] == expected_ticket.title
     assert ticket["description"] == expected_ticket.description
-    assert ticket["status"] == "Open"
+    assert ticket["status"] == "OPEN"
     assert "created_by" not in ticket
 
 
