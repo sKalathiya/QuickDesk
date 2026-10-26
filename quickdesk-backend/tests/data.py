@@ -9,6 +9,7 @@ from app.models.ticket import Ticket
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.user import UserResponse
 from app.schemas.ticket import TicketResponse
+from datetime import datetime
 
 
 valid_ticket_data = {
@@ -119,63 +120,95 @@ multiple_tickets_with_filters = [
         "category": "IT",
         "priority": "LOW",
         "status": "OPEN",
+        "resolved_at": None,
+        "created_at": datetime.now(),
         "title": "Test Ticket 0",
     },
     {
         "category": None,
         "priority": "LOW",
         "status": "OPEN",
+        "resolved_at": datetime.now(),
         "title": "Test Ticket 1",
     },
     {
         "category": None,
         "priority": None,
         "status": "OPEN",
+        "resolved_at": datetime.now(),
         "title": "Test Ticket 2",
     },
     {
         "category": None,
         "priority": None,
         "status": "OPEN",
+        "resolved_at": datetime.now(),
         "title": "Test Ticket 3",
     },
     {
         "category": None,
         "priority": None,
         "status": "OPEN",
+        "resolved_at": datetime.now(),
         "title": "Test Ticket 4",
     },
     {
         "category": "FINANCE",
         "priority": "LOW",
         "status": "OPEN",
+        "resolved_at": None,
         "title": "Test Ticket 5",
     },
     {
         "category": "IT",
         "priority": "HIGH",
         "status": "RESOLVED",
+        "resolved_at": datetime.now(),
         "title": "Test Ticket 6",
     },
     {
         "category": "HR",
         "priority": "LOW",
         "status": "OPEN",
+        "resolved_at": None,
         "title": "Test Ticket 7",
     },
     {
         "category": "IT",
         "priority": "MEDIUM",
         "status": "OPEN",
+        "resolved_at": None,
         "title": "Test Ticket 8",
     },
     {
         "category": "IT",
         "priority": "LOW",
         "status": "OPEN",
+        "resolved_at": None,
         "title": "Test Ticket 9",
     },
 ]
+
+
+expected_dashboard_response = {
+    "total_tickets": len(multiple_tickets_with_filters),
+    "tickets_by_category": {
+        "IT": 4,         # Test Ticket 0, Test Ticket 6, Test Ticket 8, Test Ticket 9
+        "HR": 1,         # Test Ticket 7
+        "FINANCE": 1,    # Test Ticket 5
+    },
+    "tickets_by_priority": {
+        "LOW": 5,        # Test Ticket 0, 1, 5, 7, 9
+        "HIGH": 1,       # Test Ticket 6
+        "MEDIUM": 1,     # Test Ticket 8
+    },
+    "tickets_by_status": {
+        "OPEN": 9,       # All except Test Ticket 6
+        "RESOLVED": 1    # Test Ticket 6
+    },
+}
+
+
 
 ticket_filter_and_valid_total = [
     {

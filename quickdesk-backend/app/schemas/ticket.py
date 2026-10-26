@@ -46,8 +46,8 @@ class TicketFilter(BaseModel):
     status: Optional[TicketStatus] = None
     priority: Optional[TicketPriority] = None
     category: Optional[TicketCategory] = None
-    title: Optional[str] = None
-    page: int = Field(ge=1)
+    title: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    page: int = Field(ge=1, le=1000)
     page_size: Optional[int] = Field(default=10, ge=1, le=100)
 
     def get_skip(self) -> int:

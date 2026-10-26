@@ -63,11 +63,11 @@ async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFil
     if ticket_filter.status:
         filters.append(Ticket.status == ticket_filter.status)
     if ticket_filter.title:
-        filters.append(Ticket.title.ilike(f"%{ticket_filter.title}%"))
+        filters.append(Ticket.title.icontains(ticket_filter.title , autoescape=True))
     if user.role == UserRole.EMPLOYEE:
         filters.append(Ticket.user_id == user.id)
     total = await db.scalar(select(func.count()).select_from(Ticket).where(*filters))
-    stmt = select(Ticket).where(*filters).order_by(Ticket.created_at.desc()).offset(ticket_filter.get_skip()).limit(ticket_filter.page_size)
+    stmt = select(Ticket).where(*filters).order_by(Ticket.created_at.desc() , Ticket.id.desc()).offset(ticket_filter.get_skip()).limit(ticket_filter.page_size)
     tickets = (await db.scalars(stmt)).all()
     return TicketListResponse.model_validate({
         "tickets": [TicketResponse.model_validate(ticket) for ticket in tickets], 
