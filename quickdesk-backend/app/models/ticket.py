@@ -30,7 +30,6 @@ class TicketPriority(StrEnum):
 
 class TicketStatus(StrEnum):
     OPEN = "OPEN"
-    IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
 
 class Ticket(Base):

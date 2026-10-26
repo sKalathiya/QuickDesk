@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.user import UserResponse
 from app.schemas.ticket import TicketResponse
 
+
 valid_ticket_data = {
     "title": "Test Ticket",
     "description": "This is a test ticket",
@@ -74,13 +75,13 @@ async def add_agent_user_to_database(db, user_data: dict = valid_agent_user_data
     return UserResponse.model_validate(agent_user)
 
 async def add_ticket_to_database(db: AsyncSession, user_id: uuid.UUID):
-    ticket = Ticket(id=uuid.uuid4(), title="Test Ticket", description="This is a test ticket", user_id=user_id)
+    ticket = Ticket(id=uuid.uuid4(), title=f"Test Ticket {uuid.uuid4()}", description="This is a test ticket", user_id=user_id)
     db.add(ticket)
     await db.commit()
     await db.refresh(ticket)
     return TicketResponse.model_validate(ticket)
 
-async def generate_multiple_tickets_to_database(db: AsyncSession, user_id: uuid.UUID, count: int = 10):
+async def add_multiple_tickets_to_database(db: AsyncSession, user_id: uuid.UUID, count: int = 10):
     tickets = []
     for _ in range(count):
         ticket = await add_ticket_to_database(db, user_id)
@@ -99,7 +100,159 @@ def check_ticket_assertions(ticket: dict, expected_ticket: TicketResponse):
 
 
 
+async def add_multiple_tickets_to_database_with_filters(db: AsyncSession, user_id: uuid.UUID, count: int = 10):
+    tickets = []
+    for _ in range(count):
+        ticket = Ticket(id=uuid.uuid4(), title=multiple_tickets_with_filters[_]["title"], description="This is a test ticket", user_id=user_id)
+        ticket.category = multiple_tickets_with_filters[_]["category"]
+        ticket.priority = multiple_tickets_with_filters[_]["priority"]
+        ticket.status = multiple_tickets_with_filters[_]["status"]
+        db.add(ticket)
+        await db.flush()
+        await db.refresh(ticket)
+        tickets.append(TicketResponse.model_validate(ticket))
+    await db.commit()
+    return tickets
 
+multiple_tickets_with_filters = [
+    {
+        "category": "IT",
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 0",
+    },
+    {
+        "category": None,
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 1",
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": "OPEN",
+        "title": "Test Ticket 2",
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": "OPEN",
+        "title": "Test Ticket 3",
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": "OPEN",
+        "title": "Test Ticket 4",
+    },
+    {
+        "category": "FINANCE",
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 5",
+    },
+    {
+        "category": "IT",
+        "priority": "HIGH",
+        "status": "RESOLVED",
+        "title": "Test Ticket 6",
+    },
+    {
+        "category": "HR",
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 7",
+    },
+    {
+        "category": "IT",
+        "priority": "MEDIUM",
+        "status": "OPEN",
+        "title": "Test Ticket 8",
+    },
+    {
+        "category": "IT",
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 9",
+    },
+]
 
-
-
+ticket_filter_and_valid_total = [
+    {
+        "category": "IT",
+        "priority": None,
+        "status": None,
+        "title": None,
+        "total": 4,  # Test Ticket 3, Test Ticket 6, Test Ticket 8, Test Ticket 9
+    },
+    {
+        "category": None,
+        "priority": "LOW",
+        "status": None,
+        "title": None,
+        "total": 5,  
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": "OPEN",
+        "title": None,
+        "total": 9, 
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": None,
+        "title": "Test Ticket 0",
+        "total": 1,  # Test Ticket 0
+    },
+    {
+        "category": None,
+        "priority": None,
+        "status": None,
+        "title": "Test",
+        "total": 10,  # Test Ticket 0
+    },
+    {
+        "category": "IT",
+        "priority": "MEDIUM",
+        "status": None,
+        "title": None,
+        "total": 1,  # Test Ticket 3, Test Ticket 8
+    },
+    {
+        "category": None,
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": None,
+        "total": 5,  # Test Ticket 2, Test Ticket 6, Test Ticket 7, Test Ticket 9
+    },
+    {
+        "category": "IT",
+        "priority": None,
+        "status": "RESOLVED",
+        "title": None,
+        "total": 1,  # Test Ticket 10
+    },
+    {
+        "category": None,
+        "priority": "LOW",
+        "status": None,
+        "title": "Test Ticket 5",
+        "total": 1,  # Test Ticket 5
+    },
+    {
+        "category": None,
+        "priority": "MEDIUM",
+        "status": None,
+        "title": "Test Ticket 4",
+        "total": 0,  # Test Ticket 4
+    },
+    {
+        "category": "IT",
+        "priority": "LOW",
+        "status": "OPEN",
+        "title": "Test Ticket 9",
+        "total": 1,  # Test Ticket 9
+    },
+]

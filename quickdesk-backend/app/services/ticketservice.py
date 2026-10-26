@@ -5,7 +5,7 @@ from app.models.ticket import Ticket, TicketStatus
 from sqlalchemy import select, func
 import uuid
 from app.models.user import UserRole
-from app.api.deps import Pagination
+from app.schemas.ticket import TicketFilter, TicketListResponse
 from app.models.agent_logs import AgentLogs, _log_type
 from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException, TicketInvalidStatusException
 
@@ -52,15 +52,31 @@ async def get_ticket_by_id(ticket_id: str, user: User, db: AsyncSession) -> Tick
         raise TicketNotFoundException("Ticket not found")
     return TicketResponse.model_validate(ticket)
 
-async def get_all_tickets(user: User, db: AsyncSession, pagination: Pagination) -> list[TicketResponse]:
+async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFilter) -> TicketListResponse:
     """Return one page of tickets, scoped to the caller when the caller is an employee."""
     # Employees only see their own tickets; other roles see the full list.
+    filters = []
+    if ticket_filter.category:
+        filters.append(Ticket.category == ticket_filter.category)
+    if ticket_filter.priority:
+        filters.append(Ticket.priority == ticket_filter.priority)
+    if ticket_filter.status:
+        filters.append(Ticket.status == ticket_filter.status)
+    if ticket_filter.title:
+        filters.append(Ticket.title.ilike(f"%{ticket_filter.title}%"))
     if user.role == UserRole.EMPLOYEE:
-        stmt = select(Ticket).where(Ticket.user_id == user.id).order_by(Ticket.created_at.desc()).offset(pagination.get_skip()).limit(pagination.get_limit())
-    else:
-        stmt = select(Ticket).order_by(Ticket.created_at.desc()).offset(pagination.get_skip()).limit(pagination.get_limit())
-    tickets = await db.scalars(stmt)
-    return [TicketResponse.model_validate(ticket) for ticket in tickets]
+        filters.append(Ticket.user_id == user.id)
+    total = await db.scalar(select(func.count()).select_from(Ticket).where(*filters))
+    stmt = select(Ticket).where(*filters).order_by(Ticket.created_at.desc()).offset(ticket_filter.get_skip()).limit(ticket_filter.page_size)
+    tickets = (await db.scalars(stmt)).all()
+    return TicketListResponse.model_validate({
+        "tickets": [TicketResponse.model_validate(ticket) for ticket in tickets], 
+        "total": total, 
+        "page": ticket_filter.page, 
+        "page_size": ticket_filter.page_size, 
+        "has_next": total > ticket_filter.get_skip() + ticket_filter.page_size,
+        "has_previous": ticket_filter.page > 1
+        })
 
 
 async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agent_user: User, db: AsyncSession) -> TicketResponse:
