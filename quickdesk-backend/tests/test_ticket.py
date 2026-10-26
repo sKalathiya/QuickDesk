@@ -65,6 +65,7 @@ async def test_get_ticket_not_found(client):
 
 #test another employee cannot get a ticket that is not created by them
 async def test_get_ticket_not_created_by_user(client, db):
+    """Expect another employee's ticket to be reported as not found."""
     user = await register_user(client)
     ticket = await add_ticket_to_database(db, uuid.UUID(user["id"]))
     another_user_data = {

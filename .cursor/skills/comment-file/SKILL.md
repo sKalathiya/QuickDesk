@@ -38,7 +38,7 @@ The subagent does not see the chat. Put the path and the limits in the prompt:
 ```text
 Comment only this file. No change to code only comment.
 
-Repository: <absolute workspace path>
+
 File: <absolute path>
 
 Read .cursor/agents/code-commenter.mdc and follow it.
@@ -62,7 +62,5 @@ Relay its reply:
 - each comment added, one line per function or class
 - what was left uncommented
 - any defect noticed and not touched
-
-Check the diff for that file. A valid edit is an added comment or docstring only. If any other line changed, restore those lines and say what you restored.
 
 If the subagent fails before commenting, retry once with the same prompt. If the second attempt fails, stop and report the short error. Do not keep retrying. Do not comment the file yourself.

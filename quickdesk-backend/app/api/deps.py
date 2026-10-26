@@ -9,23 +9,26 @@ from app.models.user import User, UserRole
 from fastapi import Cookie, Depends
 from app.core.security import get_user_id_from_access_token
 import uuid
+from app.exceptions.auth_exceptions import UnauthorizedException, InvalidUserIDException, TokenMissingException
 
 async def get_db():
     async with SessionLocal() as db:
         yield db    
 
 async def get_current_user(access_token: str = Cookie(default=None), db: AsyncSession = Depends(get_db)) -> User:
-    if not access_token:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")
+    """Return the active user identified by the access-token cookie."""
     try:
+        if not access_token:
+            raise TokenMissingException("Unauthorized")
         user_id = uuid.UUID(get_user_id_from_access_token(access_token))
-    except (ValueError, AttributeError) as e:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized") from e
-    result = await db.execute(select(User).where(User.id == user_id).limit(1))
-    user = result.scalar_one_or_none()
-    if not user or not user.isActive:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail="Unauthorized")
-    return user
+        result = await db.execute(select(User).where(User.id == user_id).limit(1))
+        user = result.scalar_one_or_none()
+        # Inactive accounts use the same unauthorized error as an unknown id.
+        if not user or not user.isActive:
+            raise InvalidUserIDException("Unauthorized")
+        return user
+    except UnauthorizedException as e:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail=str(e)) from e
 
 
 async def get_current_agent_user(user: User = Depends(get_current_user)) -> User:

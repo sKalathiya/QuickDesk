@@ -6,3 +6,6 @@ class TicketNotFoundException(TicketException):
 
 class TicketInvalidIDException(TicketException):
     pass
+
+class TicketInvalidStatusException(TicketException):
+    pass

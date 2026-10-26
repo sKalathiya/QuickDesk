@@ -41,6 +41,7 @@ async def test_register_validation(client, payload, expected_status, expected_ms
 
 # Test: successful login and sets secure cookie
 async def test_login_success(client):
+    """Confirm login returns an empty body and puts the token only in the cookie."""
     await register_user(client)
     login_response = await client.post("/api/v1/auth/login", json=valid_user_login_data)
     assert login_response.status_code == 200
@@ -62,6 +63,7 @@ async def test_login_success(client):
     ]
 )
 async def test_login_failures(client, login_json, expected_status, expected_msg):
+    """Seed a user before credential checks, and skip seeding when the body is empty."""
     if login_json:
         await register_user(client)
     response = await client.post("/api/v1/auth/login", json=login_json)

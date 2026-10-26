@@ -25,7 +25,8 @@ async def InitializeDatabase():
 
 @pytest.fixture()
 async def db():
-    
+    """Yield a session whose commits are savepoints on a transaction that always rolls back."""
+
     connection = await engine.connect()
     transaction = await connection.begin()
     session = TestingSessionLocal(bind=connection , join_transaction_mode="create_savepoint")
@@ -33,6 +34,7 @@ async def db():
         yield session
     finally:
         await session.close()
+        # Undo this test's writes, including commits that only created savepoints.
         await transaction.rollback()
         await connection.close()
     

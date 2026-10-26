@@ -7,10 +7,11 @@ from datetime import datetime
 import uuid
 
 class UserBase(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
+    model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True, extra="forbid")
     name: str = Field(..., min_length=1, max_length=50)
     email: EmailStr
 
 class UserResponse(UserBase):
     id: uuid.UUID
     role: UserRole
+    created_at: datetime

@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
 from typing import TYPE_CHECKING
 from pydantic import ConfigDict
+from sqlalchemy.types import TIMESTAMP
 
 # This is only True for IDEs/Linters; it is False during app execution
 if TYPE_CHECKING:
@@ -38,14 +39,13 @@ class Ticket(Base):
     title: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
     fileName: Mapped[str] = mapped_column(nullable=True)
-    resolutionTime: Mapped[int] = mapped_column(nullable=True)
     resolutionDescription: Mapped[str] = mapped_column(nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.now())
-    updated_at: Mapped[datetime.datetime] = mapped_column(nullable=False, default=func.now(), onupdate=func.now())
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=False, default=func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=False, default=func.now(), onupdate=func.now())
+    resolved_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=True)
     status: Mapped[TicketStatus] = mapped_column(nullable=False, default=TicketStatus.OPEN)
     priority: Mapped[TicketPriority] = mapped_column( nullable=False, default=TicketPriority.NOT_SPECIFIED)
     category: Mapped[TicketCategory] = mapped_column(nullable=False, default=TicketCategory.NOT_SPECIFIED)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_by: Mapped["User"] = relationship("User", back_populates="tickets" )
 
-    

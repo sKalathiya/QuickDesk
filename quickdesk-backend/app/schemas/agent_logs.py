@@ -6,7 +6,7 @@ from enum import Enum
 
 
 class AgentLogBase(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, extra="forbid", str_strip_whitespace=True)
     agent_id: uuid.UUID
     ticket_id: uuid.UUID
     log_type: LogType

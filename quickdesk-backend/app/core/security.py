@@ -5,6 +5,7 @@ from pwdlib import PasswordHash
 from fastapi.exceptions import HTTPException
 import jwt
 from app.core.config import settings
+from app.exceptions.auth_exceptions import InvalidTokenException
 
 password_hash = PasswordHash.recommended()
 
@@ -16,18 +17,19 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(payload: dict) -> str:
+    """Sign a JWT payload that must include id and exp claims."""
     if "id" not in payload or "exp" not in payload:
         raise ValueError("Payload missing required claim information!")
-    try:
-        return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-    except TypeError as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error") from e
+    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    
 
 
 
 def get_user_id_from_access_token(token:str) -> str:
+    """Return the id claim from a verified access token."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM], options={"require": ["id", "exp"]})
         return payload["id"]
     except (jwt.ExpiredSignatureError , jwt.InvalidTokenError, jwt.MissingRequiredClaimError) as e:
-        raise HTTPException(status_code=401, detail="Unauthorized") from e
+        # Map an expired, invalid, or incomplete token to an unauthorized error.
+        raise InvalidTokenException("Unauthorized") from e

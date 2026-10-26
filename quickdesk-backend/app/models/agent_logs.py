@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 import uuid
 from enum import StrEnum
 from app.core.database import Base
+from sqlalchemy.types import TIMESTAMP
 
 class LogType(StrEnum):
     CATEGORY_CHANGE = "CATEGORY_CHANGE"
@@ -11,6 +12,7 @@ class LogType(StrEnum):
     RESOLUTION_DESCRIPTION_CHANGE = "RESOLUTION_DESCRIPTION_CHANGE"
 
 def _log_type(field: str) -> LogType:
+    """Map a changed ticket field name to its agent-log type."""
     if field == "category":
         return LogType.CATEGORY_CHANGE
     elif field == "priority":
@@ -27,6 +29,6 @@ class AgentLogs(Base):
     log_type: Mapped[LogType] = mapped_column(nullable=False)
     old_value: Mapped[str] = mapped_column(String, nullable=True)
     new_value: Mapped[str] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False, default=func.now())
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, default=func.now())
 
     

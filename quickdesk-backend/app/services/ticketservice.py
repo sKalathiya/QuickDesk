@@ -1,15 +1,13 @@
-from app.schemas.ticket import TicketCreate, TicketResponse, TicketAgentUpdate
+from app.schemas.ticket import TicketCreate, TicketResponse, TicketAgentUpdate, TicketAgentResolve
 from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.ticket import Ticket
-from sqlalchemy import select
-from fastapi import HTTPException
-from fastapi import status
+from app.models.ticket import Ticket, TicketStatus
+from sqlalchemy import select, func
 import uuid
 from app.models.user import UserRole
 from app.api.deps import Pagination
 from app.models.agent_logs import AgentLogs, _log_type
-from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException
+from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException, TicketInvalidStatusException
 
 async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> TicketResponse:
     """Insert a ticket for the caller and commit it."""
@@ -58,14 +56,14 @@ async def get_all_tickets(user: User, db: AsyncSession, pagination: Pagination) 
     """Return one page of tickets, scoped to the caller when the caller is an employee."""
     # Employees only see their own tickets; other roles see the full list.
     if user.role == UserRole.EMPLOYEE:
-        stmt = select(Ticket).where(Ticket.user_id == user.id).offset(pagination.get_skip()).limit(pagination.get_limit())
+        stmt = select(Ticket).where(Ticket.user_id == user.id).order_by(Ticket.created_at.desc()).offset(pagination.get_skip()).limit(pagination.get_limit())
     else:
-        stmt = select(Ticket).offset(pagination.get_skip()).limit(pagination.get_limit())
+        stmt = select(Ticket).order_by(Ticket.created_at.desc()).offset(pagination.get_skip()).limit(pagination.get_limit())
     tickets = await db.scalars(stmt)
     return [TicketResponse.model_validate(ticket) for ticket in tickets]
 
 
-async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, user: User, db: AsyncSession) -> TicketResponse:
+async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agent_user: User, db: AsyncSession) -> TicketResponse:
     """Apply an agent's field changes and record each change in the agent log."""
     try:
         try:
@@ -81,7 +79,7 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, user
         for key, value in ticket.model_dump(exclude_unset=True, exclude_none=True).items():
             if value == getattr(db_ticket, key):
                 continue
-            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=user.id, log_type=_log_type(key), old_value=str(getattr(db_ticket, key)), new_value=str(value)))
+            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=agent_user.id, log_type=_log_type(key), old_value=str(getattr(db_ticket, key)), new_value=str(value)))
             setattr(db_ticket, key, value)
         db.add_all(log_stmts)
         await db.flush()
@@ -95,3 +93,28 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, user
         raise
     
         
+async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, agent_user: User, db: AsyncSession) -> TicketResponse:
+    try:
+        try:
+            ticket_id = uuid.UUID(ticket_id)
+        except (ValueError, AttributeError) as e:
+            raise TicketInvalidIDException("Invalid ticket ID") from e
+        stmt = select(Ticket).where(Ticket.id == ticket_id).limit(1).with_for_update()
+        db_ticket = await db.scalar(stmt)
+        if not db_ticket:
+            raise TicketNotFoundException("Ticket not found")
+        if db_ticket.status != TicketStatus.OPEN:
+            raise TicketInvalidStatusException("Ticket is not open")
+        log_stmt = AgentLogs(ticket_id=db_ticket.id, agent_id=agent_user.id, log_type=_log_type("resolutionDescription"), old_value=str(db_ticket.resolutionDescription), new_value=str(ticket.resolutionDescription))
+        db.add(log_stmt)
+        db_ticket.resolutionDescription = ticket.resolutionDescription
+        db_ticket.resolved_at= func.now()
+        db_ticket.status = TicketStatus.RESOLVED
+        await db.flush()
+        await db.refresh(db_ticket)
+        ticketResponse = TicketResponse.model_validate(db_ticket)
+        await db.commit()
+        return ticketResponse
+    except Exception:
+        await db.rollback()
+        raise

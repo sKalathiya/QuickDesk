@@ -49,6 +49,7 @@ async def login_user(client , user_data: dict = valid_user_login_data) -> Respon
     return login_response.json()
 
 def generate_invalid_token() -> str:
+    """Mint a signed, unexpired JWT for a user id that does not exist."""
     payload = {
         "id": str(uuid.uuid4()),
         "exp": time.time() + settings.JWT_EXPIRATION_TIME,
