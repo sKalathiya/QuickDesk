@@ -7,9 +7,7 @@ from typing import AsyncIterable
 from app.api.deps import get_agent_notification_manager, get_employee_notification_manager
 from fastapi.sse import ServerSentEvent
 from app.api.deps import NotificationManager
-from app.services.notificationservice import get_notifications
 import uuid
-import asyncio
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -21,7 +19,7 @@ async def handle_get_agent_notifications(user: User = Depends(get_current_agent_
         client_queue = notification_manager.add_connection(user_id, connection_id)
         while True:
             notification = await client_queue.get()
-            yield ServerSentEvent(data=notification.data, event=notification.event, id=str(notification.id))
+            yield ServerSentEvent(event=notification.event, id=str(notification.id))
     finally:
         if notification_manager.check_is_connected(user_id, connection_id):
             notification_manager.remove_connection(connection_id, user_id)
@@ -35,7 +33,7 @@ async def handle_get_employee_notifications(user: User = Depends(get_current_emp
         client_queue = notification_manager.add_connection(user_id, connection_id)
         while True:
             notification = await client_queue.get()
-            yield ServerSentEvent(data=notification.data, event=notification.event, id=str(notification.id))
+            yield ServerSentEvent( event=notification.event, id=str(notification.id))
     finally:
         if notification_manager.check_is_connected(user_id, connection_id):
             notification_manager.remove_connection(connection_id, user_id)

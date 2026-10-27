@@ -26,12 +26,13 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, noti
         await db.refresh(new_ticket)
         ticketResponse = TicketResponse.model_validate(new_ticket)
         await db.commit()
-        notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
-        return ticketResponse
     except Exception:
         # Drop the flushed insert if the response build or the commit fails.
         await db.rollback()
         raise 
+    notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
+    return ticketResponse
+    
 
 
 async def get_tickets_by_user(user: User, db: AsyncSession) -> list[TicketResponse]:
@@ -133,8 +134,8 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
         await db.refresh(db_ticket)
         ticketResponse = TicketResponse.model_validate(db_ticket)
         await db.commit()
-        notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
-        return ticketResponse
     except Exception:
         await db.rollback()
         raise
+    notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
+    return ticketResponse
