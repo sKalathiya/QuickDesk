@@ -17,6 +17,7 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
         func.count(Ticket.id).label("count"),
     ).group_by(
         func.grouping_sets(
+            tuple_(),
             Ticket.status,
             Ticket.category,
             Ticket.priority,
@@ -35,16 +36,18 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
         if row.priority:
             tickets_by_priority[row.priority] = row.count
 
+    interval = Ticket.resolved_at - Ticket.created_at
+    interval_seconds = func.extract('epoch', interval)
     stmt = select(
-        func.avg(Ticket.resolved_at - Ticket.created_at).label("average_resolution_time"),
-    ).where(Ticket.status == TicketStatus.RESOLVED and Ticket.resolved_at is not None and Ticket.created_at is not None)
+        func.percentile_cont(0.5).within_group(interval_seconds).label("median_resolution_time"),
+    ).where(Ticket.status == TicketStatus.RESOLVED , Ticket.resolved_at.isnot(None) , Ticket.created_at.isnot(None))
     result = (await db.scalar(stmt))
-    average_resolution_time = result.total_seconds() if result is not None else 0
+    median_resolution_time = result if result is not None else 0
         
     return DashBoardResponse.model_validate({
         "total_tickets": total_count,
         "tickets_by_status": tickets_by_status,
         "tickets_by_category": tickets_by_category,
         "tickets_by_priority": tickets_by_priority,
-        "average_resolution_time": average_resolution_time,
+        "median_resolution_time": median_resolution_time,
     })
