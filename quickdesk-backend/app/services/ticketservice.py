@@ -8,7 +8,7 @@ from app.models.user import UserRole
 from app.schemas.ticket import TicketFilter, TicketListResponse
 from app.models.agent_logs import AgentLogs, _log_type
 from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException, TicketInvalidStatusException
-from app.api.deps import NotificationManager
+from app.core.notification import NotificationManager
 from app.schemas.notification import Notification, NotificationEvent
 
 async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
@@ -32,8 +32,7 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, noti
         raise 
     try:
         notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
-    except Exception as e:
-        print(f"Error adding agent notification: {e}")
+    except Exception:
         pass
     return ticketResponse
     
@@ -143,7 +142,6 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
         raise
     try:
         notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
-    except Exception as e:
-        print(f"Error adding employee notification: {e}")
+    except Exception:
         pass
     return ticketResponse

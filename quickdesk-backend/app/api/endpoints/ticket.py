@@ -13,7 +13,8 @@ from fastapi import HTTPException
 from app.schemas.ticket import TicketFilter, TicketListResponse
 from typing import Annotated
 from fastapi import Query
-from app.api.deps import get_employee_notification_manager, get_agent_notification_manager, NotificationManager
+from app.api.deps import get_employee_notification_manager, get_agent_notification_manager
+from app.core.notification import NotificationManager
 
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])

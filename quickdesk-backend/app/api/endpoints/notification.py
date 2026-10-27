@@ -6,13 +6,13 @@ from app.models.user import User
 from typing import AsyncIterable
 from app.api.deps import get_agent_notification_manager, get_employee_notification_manager
 from fastapi.sse import ServerSentEvent
-from app.api.deps import NotificationManager
+from app.core.notification import NotificationManager
 import uuid
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 @router.get("/agent/stream" , response_class=EventSourceResponse)
-async def handle_get_agent_notifications(user: User = Depends(get_current_agent_user), notification_manager: NotificationManager = Depends(get_agent_notification_manager)) -> AsyncIterable[ServerSentEvent]:
+async def handle_get_agent_notifications(user: User = Depends(get_current_agent_user), notification_manager: NotificationManager = Depends(get_employee_notification_manager)) -> AsyncIterable[ServerSentEvent]:
     try:
         user_id = user.id
         connection_id = uuid.uuid4()
@@ -26,7 +26,7 @@ async def handle_get_agent_notifications(user: User = Depends(get_current_agent_
         
 
 @router.get("/employee/stream" , response_class=EventSourceResponse)
-async def handle_get_employee_notifications(user: User = Depends(get_current_employee_user), notification_manager: NotificationManager = Depends(get_employee_notification_manager)) -> AsyncIterable[ServerSentEvent]:
+async def handle_get_employee_notifications(user: User = Depends(get_current_employee_user), notification_manager: NotificationManager = Depends(get_agent_notification_manager)) -> AsyncIterable[ServerSentEvent]:
     try:
         user_id = user.id
         connection_id = uuid.uuid4()
