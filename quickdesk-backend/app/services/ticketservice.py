@@ -30,7 +30,11 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, noti
         # Drop the flushed insert if the response build or the commit fails.
         await db.rollback()
         raise 
-    notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
+    try:
+        notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
+    except Exception as e:
+        print(f"Error adding agent notification: {e}")
+        pass
     return ticketResponse
     
 
@@ -137,5 +141,9 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
     except Exception:
         await db.rollback()
         raise
-    notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
+    try:
+        notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
+    except Exception as e:
+        print(f"Error adding employee notification: {e}")
+        pass
     return ticketResponse
