@@ -2,7 +2,7 @@
 
 from fastapi.exceptions import HTTPException
 from fastapi import Depends, Request
-from fastapi.security import Cookie
+from fastapi import Cookie
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN

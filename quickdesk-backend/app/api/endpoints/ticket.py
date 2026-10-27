@@ -20,7 +20,7 @@ from app.core.notification import NotificationManager
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.post("/" , status_code=status.HTTP_201_CREATED, response_model=TicketResponse)
-async def handle_create_ticket(ticket: TicketCreate, user: User = Depends(get_current_employee_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_employee_notification_manager)) -> TicketResponse:
+async def handle_create_ticket(ticket: TicketCreate, user: User = Depends(get_current_employee_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_agent_notification_manager)) -> TicketResponse:
     """Create a ticket for the signed-in employee."""
     return await create_ticket(ticket, user, db, notification_manager)
    
@@ -52,7 +52,7 @@ async def handle_agent_update_ticket(ticket_id: str, ticket: TicketAgentUpdate, 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 @router.put("/agent/resolve/{ticket_id}", status_code=status.HTTP_200_OK, response_model=TicketResponse)
-async def handle_agent_resolve_ticket(ticket_id: str, ticket: TicketAgentResolve, agent_user: User = Depends(get_current_agent_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_agent_notification_manager)) -> TicketResponse:
+async def handle_agent_resolve_ticket(ticket_id: str, ticket: TicketAgentResolve, agent_user: User = Depends(get_current_agent_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_employee_notification_manager)) -> TicketResponse:
     """Resolve a ticket for the signed-in agent. Rejects an invalid ticket status."""
     try:
         return await resolve_ticket_by_agent(ticket_id, ticket, agent_user, db, notification_manager)
