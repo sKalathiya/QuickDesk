@@ -3,9 +3,11 @@ from app.api.endpoints import auth
 from app.core.database import engine, Base
 from contextlib import asynccontextmanager
 from app.api.endpoints import ticket
+from app.api.endpoints import user
 #models
 from app.models.user import User
 from app.models.ticket import Ticket
+from app.models.agent_logs import AgentLogs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,4 +25,5 @@ def main():
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(ticket.router, prefix="/api/v1")
+app.include_router(user.router, prefix="/api/v1")
 

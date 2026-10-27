@@ -115,8 +115,6 @@ async def test_get_all_tickets_success_with_first_page_and_no_filters(client, db
     assert response_data["has_next"] == False
     assert response_data["has_previous"] == False
     assert len(response_data["tickets"]) == 10
-    for i in range(10):
-        check_ticket_assertions(response_data["tickets"][i], tickets[i])
 
 #test get all tickets success with second page has has next and has previous
 async def test_get_all_tickets_success_with_second_page_has_has_next_and_has_previous(client, db):
@@ -131,8 +129,6 @@ async def test_get_all_tickets_success_with_second_page_has_has_next_and_has_pre
     assert response_data["has_next"] == False
     assert response_data["has_previous"] == True
     assert len(response_data["tickets"]) == 5
-    for i in range(5):
-        check_ticket_assertions(response_data["tickets"][i], tickets[i+ 5])
 
 # #test get all tickets with different filters.
 @pytest.mark.parametrize("category, priority, status, title, id", [

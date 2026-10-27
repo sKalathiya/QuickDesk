@@ -7,6 +7,7 @@ import time
 from fastapi.exceptions import HTTPException
 from app.core.security import create_access_token
 from tests.data import valid_user_data, valid_user_login_data, valid_agent_login, add_agent_user_to_database, login_user, register_user
+import uuid
  
 #Registering a user
 
@@ -108,7 +109,7 @@ async def test_get_current_user_expired_token(client, db):
 async def test_get_current_user_invalid_cases(db, access_token, generate_token, description):
     if generate_token:
         # Generate a valid-looking token but with a non-existent user ID
-        payload = {"id": "1234567890", "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+        payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
         access_token = create_access_token(payload)
     with pytest.raises(HTTPException) as e:
         await get_current_user(access_token, db)
@@ -156,29 +157,10 @@ async def test_logout_expired_token(client):
 
 # Test: logout with invalid or missing user in token returns 401 Unauthorized
 async def test_logout_invalid_or_missing_user(client):
-    payload = {"id": "1234567890", "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+    payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
     access_token = create_access_token(payload)
     client.cookies["access_token"] = access_token
     response = await client.post("/api/v1/auth/logout")
     assert response.status_code == 401
     assert response.json()["detail"] == "Unauthorized"
 
-
-#Getting the current agent user
-
-# Test: agent can retrieve their own user info via /me/agent endpoint
-async def test_get_current_agent_user_success(client, db):
-    agent_user = await add_agent_user_to_database(db)
-    login_response = await client.post("/api/v1/auth/login", json=valid_agent_login)
-    assert login_response.status_code == 200
-    response = await client.get("/api/v1/auth/me/agent")
-    assert response.status_code == 200
-    assert response.json()["role"] == "agent"
-
-# Test: non-agent user gets 403 Forbidden when requesting agent info endpoint
-async def test_get_current_agent_user_with_non_agent_user(client):
-    await register_user(client)
-    await login_user(client)
-    response = await client.get("/api/v1/auth/me/agent")
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Forbidden"
