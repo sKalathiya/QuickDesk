@@ -8,8 +8,10 @@ from app.models.user import UserRole
 from app.schemas.ticket import TicketFilter, TicketListResponse
 from app.models.agent_logs import AgentLogs, _log_type
 from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException, TicketInvalidStatusException
+from app.api.deps import NotificationManager
+from app.schemas.notification import Notification, NotificationEvent
 
-async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> TicketResponse:
+async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     """Insert a ticket for the caller and commit it."""
     try:
         new_ticket = Ticket(
@@ -24,6 +26,7 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession) -> T
         await db.refresh(new_ticket)
         ticketResponse = TicketResponse.model_validate(new_ticket)
         await db.commit()
+        notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
         return ticketResponse
     except Exception:
         # Drop the flushed insert if the response build or the commit fails.
@@ -109,7 +112,7 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agen
         raise
     
         
-async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, agent_user: User, db: AsyncSession) -> TicketResponse:
+async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, agent_user: User, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     try:
         try:
             ticket_id = uuid.UUID(ticket_id)
@@ -130,6 +133,7 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
         await db.refresh(db_ticket)
         ticketResponse = TicketResponse.model_validate(db_ticket)
         await db.commit()
+        notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
         return ticketResponse
     except Exception:
         await db.rollback()

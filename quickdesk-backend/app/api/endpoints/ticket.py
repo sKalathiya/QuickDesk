@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.schemas.ticket import TicketResponse, TicketCreate, TicketAgentUpdate, TicketAgentResolve
 from fastapi import status
 from app.services.ticketservice import create_ticket
-from app.api.deps import get_current_agent_user, get_db, Pagination
+from app.api.deps import get_current_agent_user, get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.models.user import User

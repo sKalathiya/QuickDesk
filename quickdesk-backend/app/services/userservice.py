@@ -29,11 +29,13 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     tickets_by_category = {}
     tickets_by_priority = {}
     for row in result:
-        if row.status:
+        if row.status is None and row.category is None and row.priority is None:
+            total_count = row.count
+        elif row.status:
             tickets_by_status[row.status] = row.count
-        if row.category:
+        elif row.category:
             tickets_by_category[row.category] = row.count
-        if row.priority:
+        elif row.priority:
             tickets_by_priority[row.priority] = row.count
 
     interval = Ticket.resolved_at - Ticket.created_at
