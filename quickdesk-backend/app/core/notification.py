@@ -1,6 +1,14 @@
 import uuid
 import asyncio
+
+from dataclasses import dataclass
 from app.schemas.notification import Notification
+
+@dataclass
+class SSEConnection:
+    closed: bool = False
+    jti: uuid.UUID
+    queue: asyncio.Queue[Notification]
 
 class NotificationManager:
 
@@ -8,48 +16,60 @@ class NotificationManager:
         if max_history_length <= 0:
             raise ValueError("max_history_length must be greater than 0")
         self.max_history_length = max_history_length
-        self.connection_map: dict[uuid.UUID, list[tuple[uuid.UUID, asyncio.Queue]]] = {}
+        self.connection_map: dict[uuid.UUID, list[SSEConnection]] = {}
     
-    def add_connection(self, user_id: uuid.UUID, connection_id: uuid.UUID) -> asyncio.Queue:
-        client_queue = asyncio.Queue(maxsize=self.max_history_length)
+    def add_connection(self, user_id: uuid.UUID, jti: uuid.UUID) -> SSEConnection:
+        client_queue = asyncio.Queue[Notification](maxsize=self.max_history_length)
+        sseConnection = SSEConnection(jti=jti, queue=client_queue)
         if user_id not in self.connection_map:
-            self.connection_map[user_id] = [(connection_id, client_queue)]
+            self.connection_map[user_id] = [sseConnection]
         else:
-            self.connection_map.get(user_id).append((connection_id, client_queue))
-        return client_queue
+            self.connection_map.get(user_id).append(sseConnection)
+        return sseConnection
 
-    def remove_connection(self, connection_id: uuid.UUID, user_id: uuid.UUID):
+    def remove_connection(self, jti: uuid.UUID, user_id: uuid.UUID):
         if user_id in self.connection_map:
-            match = next((connection for connection in self.connection_map.get(user_id, []) if connection[0] == connection_id), None)
+            match = next((connection for connection in self.connection_map.get(user_id, []) if connection.jti == jti), None)
             if match:
                 self.connection_map[user_id].remove(match)
             if len(self.connection_map.get(user_id, [])) == 0:
                 del self.connection_map[user_id]
+
+    @staticmethod
+    def _publish(notification: Notification, queue: asyncio.Queue[Notification]):
+        try:
+            queue.put_nowait(notification)
+        except asyncio.QueueFull:
+            queue.get_nowait()
+            queue.put_nowait(notification)
+    
+    @staticmethod
+    def _stop(connection: SSEConnection):
+        connection.queue.shutdown(immediate=True)
+        connection.closed = True
     
     def add_agent_notification(self, notification: Notification):
         for _, connections in self.connection_map.items():
-            for _, queue in connections:
-                try:
-                    queue.put_nowait(notification)
-                except asyncio.QueueFull:
-                    queue.get_nowait()
-                    queue.put_nowait(notification)
+            for connection in connections:
+                self._publish(notification, connection.queue)
                 
     def add_employee_notification(self, user_id: uuid.UUID, notification: Notification):
-        for _, queue in self.connection_map.get(user_id, []):
-            try:
-                queue.put_nowait(notification)
-            except asyncio.QueueFull:
-                queue.get_nowait()
-                queue.put_nowait(notification)
+        for connection in self.connection_map.get(user_id, []):
+            self._publish(notification, connection.queue)
     
-    def check_is_connected(self, user_id: uuid.UUID, connection_id: uuid.UUID) -> bool:
-        return any(connection[0] == connection_id for connection in self.connection_map.get(user_id, []))
+    def check_is_connected(self, user_id: uuid.UUID, jti: uuid.UUID) -> bool:
+        return any(connection.jti == jti for connection in self.connection_map.get(user_id, []))
 
     def close(self):
         for _, connections in self.connection_map.items():
-            for _, queue in connections:
-                queue.shutdown(immediate=True)
+            for connection in connections:
+                connection.queue.shutdown(immediate=True)
         self.connection_map.clear()
+
+    def stop_connection(self, jti: uuid.UUID, user_id: uuid.UUID):
+        for connection in self.connection_map.get(user_id, []):
+            if connection.jti == jti:
+                self._stop(connection)
+                self.remove_connection(connection.jti, user_id=user_id)
 
     

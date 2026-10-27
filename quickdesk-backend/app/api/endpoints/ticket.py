@@ -15,6 +15,7 @@ from typing import Annotated
 from fastapi import Query
 from app.api.deps import get_employee_notification_manager, get_agent_notification_manager
 from app.core.notification import NotificationManager
+from app.schemas.auth import Session
 
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
@@ -27,19 +28,19 @@ async def handle_create_ticket(ticket: TicketCreate, user: User = Depends(get_cu
 
 
 @router.get("/{ticket_id}", status_code=status.HTTP_200_OK, response_model=TicketResponse)
-async def handle_get_ticket(ticket_id: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> TicketResponse:
+async def handle_get_ticket(ticket_id: str, session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> TicketResponse:
     """Return one ticket for the current user."""
     try:
-        return await get_ticket_by_id(ticket_id, user, db)
+        return await get_ticket_by_id(ticket_id, session.user, db)
     except TicketInvalidIDException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
     except TicketNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 @router.get("/", status_code=status.HTTP_200_OK, response_model=TicketListResponse)
-async def handle_get_all_tickets(ticket_filter: Annotated[TicketFilter, Query()], user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> TicketListResponse:
+async def handle_get_all_tickets(ticket_filter: Annotated[TicketFilter, Query()], session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> TicketListResponse:
     """Return one page of tickets for the current user."""
-    return await get_all_tickets(user, db, ticket_filter)
+    return await get_all_tickets(session.user, db, ticket_filter)
    
 
 @router.put("/agent/update/{ticket_id}", status_code=status.HTTP_200_OK, response_model=TicketResponse)

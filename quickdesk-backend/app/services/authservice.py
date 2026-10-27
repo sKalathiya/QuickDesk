@@ -13,6 +13,11 @@ from fastapi import status
 import time
 from app.core.config import settings
 from app.exceptions.auth_exceptions import UserAlreadyExistsException, InvalidCredentialsException
+import uuid
+from app.core.security import get_jti_from_access_token
+from app.exceptions.auth_exceptions import TokenAlreadyDeniedException
+from fastapi import Response
+from app.models.token_deny_list import TokenDenyList
 
 async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
     """Register a new user and commit the account."""
@@ -45,6 +50,14 @@ async def login_user(user: UserLogin, db: AsyncSession) -> Token:
     if not db_password:
         raise InvalidCredentialsException("Invalid email or password!")
     
-    payload = {"id": str(db_user.id), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+    payload = {"id": str(db_user.id), "exp": time.time() + settings.JWT_EXPIRATION_TIME, "jti": str(uuid.uuid4())}
     access_token = create_access_token(payload)
     return Token(access_token=access_token)
+
+
+async def logout_user(jti: uuid.UUID, response: Response, db: AsyncSession) -> None:
+    new_token = TokenDenyList(jti=jti)
+    db.add(new_token)
+    await db.commit()
+    response.delete_cookie(key="access_token", httponly=True, samesite="strict", secure=True)
+    return None

@@ -23,3 +23,5 @@ class InvalidUserIDException(UnauthorizedException):
 class TokenMissingException(UnauthorizedException):
     pass
 
+class TokenAlreadyDeniedException(UnauthorizedException):
+    pass

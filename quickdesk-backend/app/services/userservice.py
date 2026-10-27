@@ -25,9 +25,15 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     )
     result = (await db.scalars(stmt)).all()
     total_count = 0
-    tickets_by_status = {}
-    tickets_by_category = {}
-    tickets_by_priority = {}
+    tickets_by_status = {
+        status: 0 for status in TicketStatus
+    }
+    tickets_by_category = {
+        category: 0 for category in TicketCategory
+    }
+    tickets_by_priority = {
+        priority: 0 for priority in TicketPriority
+    }
     for row in result:
         if row.status is None and row.category is None and row.priority is None:
             total_count = row.count

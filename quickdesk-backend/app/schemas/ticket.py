@@ -8,7 +8,7 @@ from app.schemas.user import UserResponse
 class TicketBase(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True, extra="forbid")
     title: str = Field(..., min_length=1, max_length=255)
-    description: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1, max_length=4000)
     fileName: Optional[str] = Field(default=None, min_length=1, max_length=255)
 
 

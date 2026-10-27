@@ -9,7 +9,8 @@ from app.api.endpoints import notification
 from app.models.user import User
 from app.models.ticket import Ticket
 from app.models.agent_logs import AgentLogs
-from app.api.deps import NotificationManager
+from app.models.token_deny_list import TokenDenyList
+from app.core.notification import NotificationManager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -74,6 +74,9 @@ async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFil
     if user.role == UserRole.EMPLOYEE:
         filters.append(Ticket.user_id == user.id)
     total = await db.scalar(select(func.count()).select_from(Ticket).where(*filters))
+    if total is None:
+        total = 0
+    
     stmt = select(Ticket).where(*filters).order_by(Ticket.created_at.desc() , Ticket.id.desc()).offset(ticket_filter.get_skip()).limit(ticket_filter.page_size)
     tickets = (await db.scalars(stmt)).all()
     return TicketListResponse.model_validate({
@@ -82,7 +85,7 @@ async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFil
         "page": ticket_filter.page, 
         "page_size": ticket_filter.page_size, 
         "has_next": total > ticket_filter.get_skip() + ticket_filter.page_size,
-        "has_previous": ticket_filter.page > 1
+        "has_previous": ticket_filter.page > 1 and total > 0
         })
 
 
@@ -135,13 +138,14 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
         db_ticket.status = TicketStatus.RESOLVED
         await db.flush()
         await db.refresh(db_ticket)
+        user_id = db_ticket.user_id
         ticketResponse = TicketResponse.model_validate(db_ticket)
         await db.commit()
     except Exception:
         await db.rollback()
         raise
     try:
-        notification_manager.add_employee_notification(db_ticket.user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
+        notification_manager.add_employee_notification(user_id, Notification(event=NotificationEvent.TICKET_RESOLVED))
     except Exception:
         pass
     return ticketResponse
