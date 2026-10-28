@@ -7,6 +7,7 @@ from app.models.ticket import Ticket, TicketCategory, TicketPriority, TicketStat
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.sql.functions import func
+from app.models.agent_logs import AgentLogs
 
 
 async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
@@ -51,11 +52,15 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     ).where(Ticket.status == TicketStatus.RESOLVED , Ticket.resolved_at.isnot(None) , Ticket.created_at.isnot(None))
     result = (await db.scalar(stmt))
     median_resolution_time = result if result is not None else 0
-        
+
+    stmt = select(func.count(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True)
+    result = (await db.scalar(stmt))
+    total_logs_overridden = result if result is not None else 0
     return DashBoardResponse.model_validate({
         "total_tickets": total_count,
         "tickets_by_status": tickets_by_status,
         "tickets_by_category": tickets_by_category,
         "tickets_by_priority": tickets_by_priority,
         "median_resolution_time": median_resolution_time,
+        "total_logs_overridden": total_logs_overridden,
     })
