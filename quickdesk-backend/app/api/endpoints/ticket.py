@@ -16,6 +16,7 @@ from fastapi import Query
 from app.api.deps import get_notification_manager
 from app.core.notification import NotificationManager
 from app.schemas.auth import Session
+from app.rag.agent import Answer, get_answer
 
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
@@ -63,3 +64,8 @@ async def handle_agent_resolve_ticket(ticket_id: str, ticket: TicketAgentResolve
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except TicketInvalidStatusException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
+
+
+@router.post("/agent/{query}/answer", response_model=Answer)
+async def handle_agent_answer_ticket(query: str, session: Session = Depends(get_current_agent_user)) -> Answer:
+    return await get_answer(query)

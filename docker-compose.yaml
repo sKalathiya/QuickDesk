@@ -5,7 +5,7 @@ networks:
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:0.8.7-pg17
     container_name: quickdesk-postgres
     ports:
       - "${POSTGRES_PORT}:5432"

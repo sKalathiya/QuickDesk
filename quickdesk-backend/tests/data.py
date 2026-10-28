@@ -102,7 +102,6 @@ def check_ticket_assertions(ticket: dict, expected_ticket: TicketResponse):
 
 
 
-
 async def add_multiple_tickets_to_database_with_filters(db: AsyncSession, user_id: uuid.UUID, count: int = 10):
     tickets = []
     for _ in range(count):

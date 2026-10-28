@@ -6,7 +6,7 @@ from app.schemas.user import UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, Request
 from app.api.deps import get_notification_manager
-from app.models.user import UserRole
+from app.models.user import UserRole, User
 from app.api.deps import get_db
 from fastapi import APIRouter
 from fastapi import status
@@ -33,13 +33,13 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)) -> User
    
 
 @router.post("/login" , status_code=status.HTTP_200_OK)
-async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(get_db)) -> None:
+async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(get_db)):
     try:
         token =  await login_user(user, db)
     except InvalidCredentialsException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
     response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict", secure=True)
-    return
+    return token.access_token
 
 @router.post("/logout", status_code = status.HTTP_200_OK)
 async def logout(response: Response, session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_notification_manager)) -> None:

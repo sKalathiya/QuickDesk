@@ -10,6 +10,7 @@ from app.core.notification import NotificationManager
 from app.schemas.notification import Notification, NotificationEvent
 from app.schemas.auth import Session
 from app.schemas.ticket import TicketFilter, TicketListResponse
+from app.rag.agent import get_classification
 
 async def create_ticket(ticket: TicketCreate, session: Session, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     """Insert a ticket for the caller and commit it."""
@@ -30,6 +31,17 @@ async def create_ticket(ticket: TicketCreate, session: Session, db: AsyncSession
         # Drop the flushed insert if the response build or the commit fails.
         await db.rollback()
         raise 
+    try:
+        classification = await get_classification(ticketResponse.title, ticketResponse.description)
+        new_ticket.ai_category = classification.category
+        new_ticket.ai_priority = classification.priority
+        await db.flush()
+        await db.refresh(new_ticket)
+        ticketResponse = TicketResponse.model_validate(new_ticket)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        pass
     try:
         notification_manager.add_agent_notification(Notification(event=NotificationEvent.TICKET_CREATED))
     except Exception:
@@ -105,7 +117,10 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, sess
         for key, value in ticket.model_dump(exclude_unset=True, exclude_none=True).items():
             if value == getattr(db_ticket, key):
                 continue
-            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type(key), old_value=str(getattr(db_ticket, key)), new_value=str(value)))
+            ai_override = False
+            if str(getattr(db_ticket, key)) == "NOT_SPECIFIED" and  value != str(getattr(db_ticket, f"ai_{key}")):
+                ai_override = True
+            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type(key), ai_override=ai_override, old_value=str(getattr(db_ticket, key)), new_value=str(value)))
             setattr(db_ticket, key, value)
         db.add_all(log_stmts)
         await db.flush()

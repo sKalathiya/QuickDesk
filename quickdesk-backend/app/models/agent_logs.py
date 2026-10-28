@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import UUID, Column, ForeignKey, Integer, String, DateTime, func
+from sqlalchemy import UUID, Column, ForeignKey, Integer, String, DateTime, func, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 import uuid
 from enum import StrEnum
@@ -29,6 +29,7 @@ class AgentLogs(Base):
     log_type: Mapped[LogType] = mapped_column(nullable=False)
     old_value: Mapped[str] = mapped_column(String, nullable=True)
     new_value: Mapped[str] = mapped_column(String, nullable=True)
+    ai_override: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, default=func.now())
 
     

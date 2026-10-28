@@ -45,6 +45,8 @@ class Ticket(Base):
     status: Mapped[TicketStatus] = mapped_column(nullable=False, default=TicketStatus.OPEN)
     priority: Mapped[TicketPriority] = mapped_column( nullable=False, default=TicketPriority.NOT_SPECIFIED)
     category: Mapped[TicketCategory] = mapped_column(nullable=False, default=TicketCategory.NOT_SPECIFIED)
+    ai_priority: Mapped[TicketPriority] = mapped_column( nullable=False, default=TicketPriority.NOT_SPECIFIED)
+    ai_category: Mapped[TicketCategory] = mapped_column(nullable=False, default=TicketCategory.NOT_SPECIFIED)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_by: Mapped["User"] = relationship("User", back_populates="tickets" )
 

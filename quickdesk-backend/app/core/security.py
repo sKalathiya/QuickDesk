@@ -20,7 +20,7 @@ def create_access_token(payload: dict) -> str:
     """Sign a JWT payload that must include id and exp claims."""
     if "id" not in payload or "exp" not in payload or "jti" not in payload:
         raise ValueError("Payload missing required claim information!")
-    return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+    return jwt.encode(payload, settings.JWT_SECRET_KEY.get_secret_value(), algorithm=settings.JWT_ALGORITHM)
     
 
 
@@ -28,7 +28,7 @@ def create_access_token(payload: dict) -> str:
 def get_user_id_from_access_token(token:str) -> (str, str):
     """Return the id claim from a verified access token."""
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM], options={"require": ["id", "exp", "jti"]})
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY.get_secret_value(), algorithms=[settings.JWT_ALGORITHM], options={"require": ["id", "exp", "jti"]})
         return payload["id"], payload["jti"]
     except (jwt.ExpiredSignatureError , jwt.InvalidTokenError, jwt.MissingRequiredClaimError) as e:
         # Map an expired, invalid, or incomplete token to an unauthorized error.

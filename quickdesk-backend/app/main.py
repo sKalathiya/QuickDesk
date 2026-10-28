@@ -11,12 +11,24 @@ from app.models.ticket import Ticket
 from app.models.agent_logs import AgentLogs
 from app.models.token_deny_list import TokenDenyList
 from app.core.notification import NotificationManager
+from sqlalchemy import text
+from pathlib import Path
+from app.rag.docs import load_docs
+from app.core.seed import seed_agent_user
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DOCS_PATH = BASE_DIR / "knowledge-base"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     #create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await seed_agent_user(conn)
+   # await load_docs(DOCS_PATH)
+    
     app.state.notification_manager = NotificationManager()
     try:
         yield
