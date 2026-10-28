@@ -28,7 +28,7 @@ class NotificationManager:
         client_queue = asyncio.Queue[Notification](maxsize=self.max_queue_size)
         sseConnection = SSEConnection(jti=jti, queue=client_queue)
         connection_map = self.connection_map.get(role)
-        if not connection_map:
+        if connection_map is None:
             return None
         if user_id not in connection_map:
             connection_map[user_id] = [sseConnection]
