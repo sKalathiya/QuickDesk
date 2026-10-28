@@ -4,19 +4,21 @@
 from app.schemas.auth import UserCreate, UserLogin, Token
 from app.schemas.user import UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
+from fastapi import Depends, Request
+from app.api.deps import get_notification_manager
+from app.models.user import UserRole
 from app.api.deps import get_db
 from fastapi import APIRouter
 from fastapi import status
 from app.services.authservice import login_user, create_user, logout_user
 from fastapi import Response
-from app.models.user import User
-from app.api.deps import get_current_agent_user, get_current_user
+from app.api.deps import get_current_user
 from app.exceptions.auth_exceptions import UserAlreadyExistsException
 from fastapi import HTTPException
 from app.exceptions.auth_exceptions import InvalidCredentialsException
 from app.exceptions.auth_exceptions import TokenAlreadyDeniedException
 from app.schemas.auth import Session
+from app.core.notification import NotificationManager
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -40,8 +42,6 @@ async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(
     return
 
 @router.post("/logout", status_code = status.HTTP_200_OK)
-async def logout(response: Response, session: Session = Depends(get_current_user)) -> None:
-    try:
-        await logout_user(response, session.jti)
-    except TokenAlreadyDeniedException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
+async def logout(response: Response, session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_notification_manager)) -> None:
+    return await logout_user(session, response, db, notification_manager)
+

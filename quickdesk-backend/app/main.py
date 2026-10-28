@@ -17,13 +17,11 @@ async def lifespan(app: FastAPI):
     #create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    app.state.agent_notification_manager = NotificationManager()
-    app.state.employee_notification_manager = NotificationManager()
+    app.state.notification_manager = NotificationManager()
     try:
         yield
     finally:
-        app.state.agent_notification_manager.close()
-        app.state.employee_notification_manager.close()
+        app.state.notification_manager.shutdown()
 
 app = FastAPI(title="QuickDesk API", version="0.1.0", lifespan=lifespan)
 

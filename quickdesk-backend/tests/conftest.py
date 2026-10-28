@@ -5,6 +5,9 @@ from app.core.database import Base
 from httpx import AsyncClient, ASGITransport
 from app.api.deps import get_db
 from app.main import app
+from app.core.notification import NotificationManager
+from unittest.mock import MagicMock
+from app.api.deps import get_notification_manager
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -48,7 +51,8 @@ async def client(db):
         finally:
             pass
     app.dependency_overrides[get_db] = _override_get_db
-    
+    mock_notification_manager = MagicMock(spec=NotificationManager)
+    app.dependency_overrides[get_notification_manager] = lambda: mock_notification_manager
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as client:
             yield client

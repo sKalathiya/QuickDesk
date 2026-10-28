@@ -1,24 +1,24 @@
 from app.schemas.ticket import TicketCreate, TicketResponse, TicketAgentUpdate, TicketAgentResolve
-from app.models.user import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.ticket import Ticket, TicketStatus
 from sqlalchemy import select, func
 import uuid
 from app.models.user import UserRole
-from app.schemas.ticket import TicketFilter, TicketListResponse
 from app.models.agent_logs import AgentLogs, _log_type
 from app.exceptions.ticket_exceptios import TicketNotFoundException, TicketInvalidIDException, TicketInvalidStatusException
 from app.core.notification import NotificationManager
 from app.schemas.notification import Notification, NotificationEvent
+from app.schemas.auth import Session
+from app.schemas.ticket import TicketFilter, TicketListResponse
 
-async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
+async def create_ticket(ticket: TicketCreate, session: Session, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     """Insert a ticket for the caller and commit it."""
     try:
         new_ticket = Ticket(
             title=ticket.title,
             description=ticket.description,
             fileName=ticket.fileName if ticket.fileName else None,
-            user_id=user.id,
+            user_id=session.user_id,
         )
         db.add(new_ticket)
         # Flush to assign an id before the response is built; the commit below persists the row.
@@ -38,20 +38,20 @@ async def create_ticket(ticket: TicketCreate, user: User, db: AsyncSession, noti
     
 
 
-async def get_tickets_by_user(user: User, db: AsyncSession) -> list[TicketResponse]:
-    tickets = await db.scalars(select(Ticket).where(Ticket.user_id == user.id))
+async def get_tickets_by_user(session: Session, db: AsyncSession) -> list[TicketResponse]:
+    tickets = await db.scalars(select(Ticket).where(Ticket.user_id == session.user_id))
     return [TicketResponse.model_validate(ticket) for ticket in tickets]
 
 
-async def get_ticket_by_id(ticket_id: str, user: User, db: AsyncSession) -> TicketResponse:
+async def get_ticket_by_id(ticket_id: str, session: Session, db: AsyncSession) -> TicketResponse:
     """Return one ticket, limited to the caller's own row when the caller is an employee."""
     try:
         ticket_id = uuid.UUID(ticket_id)
     except (ValueError, AttributeError) as e:
         raise TicketInvalidIDException("Invalid ticket ID") from e
     # Employees may only read a ticket they opened; other roles may read any ticket.
-    if user.role == UserRole.EMPLOYEE:
-        stmt = select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == user.id).limit(1)
+    if session.user_role == UserRole.EMPLOYEE:
+        stmt = select(Ticket).where(Ticket.id == ticket_id, Ticket.user_id == session.user_id).limit(1)
     else:
         stmt = select(Ticket).where(Ticket.id == ticket_id).limit(1)
     ticket = await db.scalar(stmt)
@@ -59,7 +59,7 @@ async def get_ticket_by_id(ticket_id: str, user: User, db: AsyncSession) -> Tick
         raise TicketNotFoundException("Ticket not found")
     return TicketResponse.model_validate(ticket)
 
-async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFilter) -> TicketListResponse:
+async def get_all_tickets(session: Session, db: AsyncSession, ticket_filter: TicketFilter) -> TicketListResponse:
     """Return one page of tickets, scoped to the caller when the caller is an employee."""
     # Employees only see their own tickets; other roles see the full list.
     filters = []
@@ -71,8 +71,8 @@ async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFil
         filters.append(Ticket.status == ticket_filter.status)
     if ticket_filter.title:
         filters.append(Ticket.title.icontains(ticket_filter.title , autoescape=True))
-    if user.role == UserRole.EMPLOYEE:
-        filters.append(Ticket.user_id == user.id)
+    if session.user_role == UserRole.EMPLOYEE:
+        filters.append(Ticket.user_id == session.user_id)
     total = await db.scalar(select(func.count()).select_from(Ticket).where(*filters))
     if total is None:
         total = 0
@@ -89,7 +89,7 @@ async def get_all_tickets(user: User, db: AsyncSession, ticket_filter: TicketFil
         })
 
 
-async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agent_user: User, db: AsyncSession) -> TicketResponse:
+async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, session: Session, db: AsyncSession) -> TicketResponse:
     """Apply an agent's field changes and record each change in the agent log."""
     try:
         try:
@@ -105,7 +105,7 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agen
         for key, value in ticket.model_dump(exclude_unset=True, exclude_none=True).items():
             if value == getattr(db_ticket, key):
                 continue
-            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=agent_user.id, log_type=_log_type(key), old_value=str(getattr(db_ticket, key)), new_value=str(value)))
+            log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type(key), old_value=str(getattr(db_ticket, key)), new_value=str(value)))
             setattr(db_ticket, key, value)
         db.add_all(log_stmts)
         await db.flush()
@@ -119,7 +119,7 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, agen
         raise
     
         
-async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, agent_user: User, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
+async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, session: Session, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     try:
         try:
             ticket_id = uuid.UUID(ticket_id)
@@ -131,7 +131,7 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, ag
             raise TicketNotFoundException("Ticket not found")
         if db_ticket.status != TicketStatus.OPEN:
             raise TicketInvalidStatusException("Ticket is not open")
-        log_stmt = AgentLogs(ticket_id=db_ticket.id, agent_id=agent_user.id, log_type=_log_type("resolutionDescription"), old_value=str(db_ticket.resolutionDescription), new_value=str(ticket.resolutionDescription))
+        log_stmt = AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type("resolutionDescription"), old_value=str(db_ticket.resolutionDescription), new_value=str(ticket.resolutionDescription))
         db.add(log_stmt)
         db_ticket.resolutionDescription = ticket.resolutionDescription
         db_ticket.resolved_at= func.now()

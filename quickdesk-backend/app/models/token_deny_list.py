@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import UUID, String
-import uuid
+from sqlalchemy import UUID, String, DateTime
+import uuid, datetime
 from app.core.database import Base
+from app.core.config import settings
 
 class TokenDenyList(Base):
     __tablename__ = "token_deny_list"
     jti: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True)
- 

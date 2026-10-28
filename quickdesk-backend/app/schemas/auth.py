@@ -1,10 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 import re
 import uuid
-from app.models.user import User
+from app.models.user import UserRole
 
 class Session(BaseModel):
-    user: User
+    user_id: uuid.UUID
+    user_role: UserRole
     jti: uuid.UUID
 
 class Token(BaseModel):

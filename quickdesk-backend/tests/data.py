@@ -55,6 +55,7 @@ def generate_invalid_token() -> str:
     payload = {
         "id": str(uuid.uuid4()),
         "exp": time.time() + settings.JWT_EXPIRATION_TIME,
+        "jti": str(uuid.uuid4()),
     }
     token = create_access_token(payload)
     return token
@@ -63,6 +64,7 @@ def generate_expired_token() -> str:
     payload = {
         "id": str(uuid.uuid4()),
         "exp": time.time() - 1000,
+        "jti": str(uuid.uuid4()),
     }
     token = create_access_token(payload)
     return token

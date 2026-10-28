@@ -35,24 +35,21 @@ async def get_current_user(access_token: str = Cookie(default=None), db: AsyncSe
         # Inactive accounts use the same unauthorized error as an unknown id.
         if not user or not user.isActive:
             raise InvalidUserIDException("Unauthorized")
-        return Session(user=user, jti=jti)
+        return Session(user_id=user.id, user_role=user.role, jti=jti)
     except (UnauthorizedException, ValueError, TypeError, KeyError, OverflowError) as e:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED , detail=str(e)) from e
 
 
 async def get_current_agent_user(session: Session = Depends(get_current_user)) -> Session:
-    if session.user.role != UserRole.AGENT:
+    if session.user_role != UserRole.AGENT:
         raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
     return session
 
 async def get_current_employee_user(session: Session = Depends(get_current_user)) -> Session:
-    if session.user.role != UserRole.EMPLOYEE:
+    if session.user_role != UserRole.EMPLOYEE:
         raise HTTPException(status_code=HTTP_403_FORBIDDEN , detail="Forbidden")
     return session
 
 
-async def get_agent_notification_manager(request: Request) -> NotificationManager:
-    return request.app.state.agent_notification_manager
-
-async def get_employee_notification_manager(request: Request) -> NotificationManager:
-    return request.app.state.employee_notification_manager
+def get_notification_manager(request: Request) -> NotificationManager:
+    return request.app.state.notification_manager

@@ -83,7 +83,7 @@ async def test_get_current_user_success(client, db):
     access_token = login_response.cookies.get("access_token")
     user = await get_current_user(access_token, db)
     assert user is not None
-    assert str(user.id) == register_response["id"]
+    assert str(user.user_id) == register_response["id"]
 
 # Test: get current user with expired token raises 401
 async def test_get_current_user_expired_token(client, db):
@@ -109,7 +109,7 @@ async def test_get_current_user_expired_token(client, db):
 async def test_get_current_user_invalid_cases(db, access_token, generate_token, description):
     if generate_token:
         # Generate a valid-looking token but with a non-existent user ID
-        payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+        payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME, "jti": str(uuid.uuid4())}
         access_token = create_access_token(payload)
     with pytest.raises(HTTPException) as e:
         await get_current_user(access_token, db)
@@ -157,7 +157,7 @@ async def test_logout_expired_token(client):
 
 # Test: logout with invalid or missing user in token returns 401 Unauthorized
 async def test_logout_invalid_or_missing_user(client):
-    payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME}
+    payload = {"id": str(uuid.uuid4()), "exp": time.time() + settings.JWT_EXPIRATION_TIME, "jti": str(uuid.uuid4())}
     access_token = create_access_token(payload)
     client.cookies["access_token"] = access_token
     response = await client.post("/api/v1/auth/logout")

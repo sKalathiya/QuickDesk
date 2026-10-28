@@ -1,5 +1,3 @@
-from fastapi.exceptions import HTTPException
-from starlette.status import HTTP_401_UNAUTHORIZED
 from app.schemas.auth import Token
 from app.schemas.auth import UserLogin
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,15 +7,14 @@ from app.core.security import verify_password, create_access_token
 from app.schemas.auth import UserCreate
 from app.schemas.user import UserResponse
 from app.core.security import hash_password
-from fastapi import status
 import time
 from app.core.config import settings
 from app.exceptions.auth_exceptions import UserAlreadyExistsException, InvalidCredentialsException
 import uuid
-from app.core.security import get_jti_from_access_token
-from app.exceptions.auth_exceptions import TokenAlreadyDeniedException
 from fastapi import Response
 from app.models.token_deny_list import TokenDenyList
+from app.schemas.auth import Session
+from app.core.notification import NotificationManager
 
 async def create_user(user: UserCreate, db: AsyncSession) -> UserResponse:
     """Register a new user and commit the account."""
@@ -55,9 +52,13 @@ async def login_user(user: UserLogin, db: AsyncSession) -> Token:
     return Token(access_token=access_token)
 
 
-async def logout_user(jti: uuid.UUID, response: Response, db: AsyncSession) -> None:
-    new_token = TokenDenyList(jti=jti)
+async def logout_user(session: Session, response: Response, db: AsyncSession, notification_manager: NotificationManager) -> None:
+    new_token = TokenDenyList(jti=session.jti)
     db.add(new_token)
     await db.commit()
+    try:
+        notification_manager.terminate_connection(session.jti, session.user_id, session.user_role)
+    except Exception:
+        pass
     response.delete_cookie(key="access_token", httponly=True, samesite="strict", secure=True)
     return None
