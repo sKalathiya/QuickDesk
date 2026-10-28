@@ -56,7 +56,7 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     result = (await db.scalar(stmt))
     median_resolution_time = result if result is not None else 0
 
-    stmt = select(func.count(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True, AgentLogs.log_type != LogType.CATEGORY_CHANGE)
+    stmt = select(func.count(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True, AgentLogs.log_type == LogType.CATEGORY_CHANGE)
     result = (await db.scalar(stmt))
     total_logs_overridden = result if result is not None else 0
     stmt = select(func.count(Ticket.id).label("total_tickets_overridden")).where(or_(Ticket.ai_category.isnot(TicketCategory.NOT_SPECIFIED)))
