@@ -67,9 +67,9 @@ async def handle_agent_resolve_ticket(ticket_id: str, ticket: TicketAgentResolve
 
 
 @router.post("/agent/{ticket_id}/answer", response_model=Answer)
-async def handle_agent_answer_ticket(ticket_id: str, query: str, session: Session = Depends(get_current_agent_user), db: AsyncSession = Depends(get_db)) -> Answer:
+async def handle_agent_answer_ticket(ticket_id: str, session: Session = Depends(get_current_agent_user), db: AsyncSession = Depends(get_db)) -> Answer:
     try:
-        return await answer_ticket(query, ticket_id, db)
+        return await answer_ticket(ticket_id, db)
     except TicketInvalidIDException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
     except TicketNotFoundException as e:

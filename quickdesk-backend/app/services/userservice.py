@@ -25,7 +25,8 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
             Ticket.priority,
         )
     )
-    result = (await db.scalars(stmt)).all()
+    result = await db.execute(stmt)
+    result = result.all()
     total_count = 0
     tickets_by_status = {
         status: 0 for status in TicketStatus
