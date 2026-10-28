@@ -35,6 +35,7 @@ class TicketResponse(TicketBase):
     ai_priority: TicketPriority
     ai_category: TicketCategory
     resolutionDescription: Optional[str] = None
+    ai_resolution_description: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     resolved_at: Optional[datetime] = None

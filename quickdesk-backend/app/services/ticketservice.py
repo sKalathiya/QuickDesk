@@ -11,6 +11,10 @@ from app.schemas.notification import Notification, NotificationEvent
 from app.schemas.auth import Session
 from app.schemas.ticket import TicketFilter, TicketListResponse
 from app.rag.agent import get_classification
+from app.rag.agent import get_answer
+from app.rag.agent import Answer
+from sqlalchemy import update
+
 
 async def create_ticket(ticket: TicketCreate, session: Session, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
     """Insert a ticket for the caller and commit it."""
@@ -120,7 +124,7 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, sess
             if value == "NOT_SPECIFIED":
                 continue
             ai_override = False
-            if str(getattr(db_ticket, key)) == "NOT_SPECIFIED" and  str(getattr(db_ticket, key)) != "NOT_SPECIFIED" and value != str(getattr(db_ticket, f"ai_{key}")):
+            if str(getattr(db_ticket, key)) == "NOT_SPECIFIED" and  str(getattr(db_ticket, f"ai_{key}")) != "NOT_SPECIFIED" and value != str(getattr(db_ticket, f"ai_{key}")):
                 ai_override = True
             log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type(key), ai_override=ai_override, old_value=str(getattr(db_ticket, key)), new_value=str(value)))
             setattr(db_ticket, key, value)
@@ -166,3 +170,26 @@ async def resolve_ticket_by_agent(ticket_id: str, ticket: TicketAgentResolve, se
     except Exception:
         pass
     return ticketResponse
+
+
+
+async def answer_ticket(ticket_id: str, db: AsyncSession) -> Answer:
+    try:
+        ticket_id = uuid.UUID(ticket_id)
+    except (ValueError, AttributeError) as e:
+        raise TicketInvalidIDException("Invalid ticket ID") from e
+    try:
+        stmt = select(Ticket).where(Ticket.id == ticket_id).limit(1).with_for_update()
+        db_ticket = await db.scalar(stmt)
+        if not db_ticket:
+            raise TicketNotFoundException("Ticket not found")
+        query = f"ticket title: {db_ticket.title} and ticket description: {db_ticket.description}"
+        answer = await get_answer(query)
+        db_ticket.ai_resolution_description = answer.answer
+        await db.flush()
+        await db.refresh(db_ticket)
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+    return answer

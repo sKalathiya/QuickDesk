@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from app.models.user import User
 from app.api.deps import get_current_user, get_current_employee_user
-from app.services.ticketservice import create_ticket, get_ticket_by_id, get_all_tickets, update_ticket_by_agent, resolve_ticket_by_agent
+from app.services.ticketservice import create_ticket, get_ticket_by_id, get_all_tickets, update_ticket_by_agent, resolve_ticket_by_agent, answer_ticket
 from app.exceptions.ticket_exceptios import TicketInvalidIDException, TicketNotFoundException, TicketInvalidStatusException
 from fastapi import HTTPException
 from app.schemas.ticket import TicketFilter, TicketListResponse
@@ -16,7 +16,7 @@ from fastapi import Query
 from app.api.deps import get_notification_manager
 from app.core.notification import NotificationManager
 from app.schemas.auth import Session
-from app.rag.agent import Answer, get_answer
+from app.rag.agent import Answer
 
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
@@ -66,6 +66,11 @@ async def handle_agent_resolve_ticket(ticket_id: str, ticket: TicketAgentResolve
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
 
 
-@router.post("/agent/{query}/answer", response_model=Answer)
-async def handle_agent_answer_ticket(query: str, session: Session = Depends(get_current_agent_user)) -> Answer:
-    return await get_answer(query)
+@router.post("/agent/{ticket_id}/answer", response_model=Answer)
+async def handle_agent_answer_ticket(ticket_id: str, query: str, session: Session = Depends(get_current_agent_user), db: AsyncSession = Depends(get_db)) -> Answer:
+    try:
+        return await answer_ticket(query, ticket_id, db)
+    except TicketInvalidIDException as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
+    except TicketNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

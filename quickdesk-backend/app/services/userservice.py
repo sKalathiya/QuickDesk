@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.sql.functions import func
 from app.models.agent_logs import AgentLogs
+from sqlalchemy import or_
 
 
 async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
@@ -53,10 +54,10 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     result = (await db.scalar(stmt))
     median_resolution_time = result if result is not None else 0
 
-    stmt = select(func.p(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True)
+    stmt = select(func.count(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True)
     result = (await db.scalar(stmt))
     total_logs_overridden = result if result is not None else 0
-    stmt = select(func.count(Ticket.id).label("total_tickets_overridden")).where(Ticket.ai_category.isnot(TicketCategory.NOT_SPECIFIED) or Ticket.ai_priority.isnot(TicketPriority.NOT_SPECIFIED))
+    stmt = select(func.count(Ticket.id).label("total_tickets_overridden")).where(or_(Ticket.ai_category.isnot(TicketCategory.NOT_SPECIFIED), Ticket.ai_priority.isnot(TicketPriority.NOT_SPECIFIED)))
     result = (await db.scalar(stmt))
     total_tickets_classified_by_ai = result if result is not None else 0
     agent_overridden_tickets_percentage = (total_logs_overridden / total_tickets_classified_by_ai) * 100 if total_tickets_classified_by_ai > 0 else 0

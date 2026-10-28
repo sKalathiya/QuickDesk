@@ -39,6 +39,7 @@ class Ticket(Base):
     description: Mapped[str] = mapped_column(nullable=False)
     fileName: Mapped[str] = mapped_column(nullable=True)
     resolutionDescription: Mapped[str] = mapped_column(nullable=True)
+    ai_resolution_description: Mapped[str] = mapped_column(nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=False, default=func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=False, default=func.now(), onupdate=func.now())
     resolved_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(timezone=True),nullable=True)
