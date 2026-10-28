@@ -23,4 +23,4 @@ class DashBoardResponse(BaseModel):
     tickets_by_priority: dict[TicketPriority, int]
     tickets_by_status: dict[TicketStatus, int]
     median_resolution_time: float
-    total_logs_overridden: int
+    agent_overridden_tickets_percentage: float

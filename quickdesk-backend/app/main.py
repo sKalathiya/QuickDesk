@@ -26,9 +26,7 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-        await seed_agent_user(conn)
-   # await load_docs(DOCS_PATH)
-    
+ 
     app.state.notification_manager = NotificationManager()
     try:
         yield

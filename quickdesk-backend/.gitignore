@@ -3,7 +3,7 @@
 venv/
 env/
 ENV/
-knowledge_base/
+knowledge-base/
 
 # Python Cache & Compiled Code
 __pycache__/

@@ -117,8 +117,10 @@ async def update_ticket_by_agent(ticket_id: str, ticket: TicketAgentUpdate, sess
         for key, value in ticket.model_dump(exclude_unset=True, exclude_none=True).items():
             if value == getattr(db_ticket, key):
                 continue
+            if value == "NOT_SPECIFIED":
+                continue
             ai_override = False
-            if str(getattr(db_ticket, key)) == "NOT_SPECIFIED" and  value != str(getattr(db_ticket, f"ai_{key}")):
+            if str(getattr(db_ticket, key)) == "NOT_SPECIFIED" and  str(getattr(db_ticket, key)) != "NOT_SPECIFIED" and value != str(getattr(db_ticket, f"ai_{key}")):
                 ai_override = True
             log_stmts.append(AgentLogs(ticket_id=db_ticket.id, agent_id=session.user_id, log_type=_log_type(key), ai_override=ai_override, old_value=str(getattr(db_ticket, key)), new_value=str(value)))
             setattr(db_ticket, key, value)
