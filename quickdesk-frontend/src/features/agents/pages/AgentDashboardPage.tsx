@@ -12,6 +12,7 @@ import { useAgentTickets } from "../hooks/useAgentTickets";
 
 import type { AgentTicketFilters as Filters } from "../api/agentApi";
 import type { TicketCategory, TicketPriority } from "../../employe/types";
+import { Link } from "react-router";
 
 const emptyFilters: Filters = {
   status: "",
@@ -185,9 +186,12 @@ export default function AgentDashboardPage() {
                     <Tr key={ticket.id}>
                       <Td className="min-w-64 max-w-96">
                         <div className="space-y-1">
-                          <p className="font-medium text-foreground">
+                          <Link
+                            to={`/agent/tickets/${ticket.id}`}
+                            className="font-medium text-foreground hover:text-brand hover:underline"
+                          >
                             {ticket.title}
-                          </p>
+                          </Link>
                           <p className="truncate text-xs text-subtle">
                             {ticket.description}
                           </p>
