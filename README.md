@@ -54,9 +54,31 @@ Once the backend is running, you can access the API at `http://localhost:8000`.
 
 ### 6. Seed the backend database
 
-```bash
-uv run app.core.seed
+Inside the `quickdesk-backend` directory, create a folder named `knowledge-base` if it does not already exist.
+
+```text
+quickdesk-backend/
+├── app/
+├── knowledge-base/
+│   ├── leave-policy.md
+│   ├── password-reset.md
+│   └── expense-reimbursement.md
+└── pyproject.toml
 ```
+
+Add your company's knowledge-base articles as Markdown (`.md`) files inside this folder.
+
+Each file should contain information about a specific topic, such as IT support, HR policies, or expense reimbursements.
+
+The application loads these Markdown files during the knowledge-base seeding process, generates embeddings using Google's embedding model, and stores them in PostgreSQL with pgvector.
+
+After creating the articles, run the seed script from the `quickdesk-backend` directory:
+
+```bash
+uv run python -m app.core.seed
+```
+
+**Note:** Ensure the PostgreSQL database is running and the required environment variables are configured before seeding. The knowledge-base folder must contain at least one valid Markdown article for documents to be ingested.
 
 This will seed the database with the default users and roles.
 
