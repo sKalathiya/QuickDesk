@@ -44,3 +44,33 @@ export function updateAgentTicket(ticketId: string, data: UpdateTicketData) {
     },
   );
 }
+
+export type AIDraftResponse = {
+  answer: string;
+  source: string;
+  confidence: number;
+};
+
+export function generateAIDraft(ticketId: string) {
+  return apiClient<AIDraftResponse>(
+    `/tickets/agent/${encodeURIComponent(ticketId)}/answer`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export function resolveAgentTicket(
+  ticketId: string,
+  resolutionDescription: string,
+) {
+  return apiClient<Ticket>(
+    `/tickets/agent/resolve/${encodeURIComponent(ticketId)}`,
+    {
+      method: "PUT",
+      body: {
+        resolutionDescription,
+      },
+    },
+  );
+}

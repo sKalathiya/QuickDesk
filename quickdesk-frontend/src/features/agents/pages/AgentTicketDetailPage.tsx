@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router";
 import { Alert } from "../../../components/ui/Alert";
 import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
+import { useState } from "react";
+import ResolveTicketModal from "../components/ResolveTicketModal";
 
 import { useAgentTicketDetail } from "../hooks/useAgentTicketDetail";
 
@@ -25,6 +27,7 @@ function formatDate(value: string | null) {
 }
 
 export default function AgentTicketDetailPage() {
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
   const { ticketId } = useParams<{ ticketId: string }>();
 
   const {
@@ -94,7 +97,12 @@ export default function AgentTicketDetailPage() {
           </p>
         </div>
 
-        <Button type="button" variant="primary" disabled={isResolved}>
+        <Button
+          type="button"
+          variant="primary"
+          disabled={isResolved}
+          onClick={() => setIsResolveModalOpen(true)}
+        >
           {isResolved ? "Resolved" : "Resolve Ticket"}
         </Button>
       </header>
@@ -177,6 +185,12 @@ export default function AgentTicketDetailPage() {
           <TicketAuditLogs ticketId={ticket.id} />
         </div>
       </div>
+      {isResolveModalOpen && !isResolved && (
+        <ResolveTicketModal
+          ticket={ticket}
+          onClose={() => setIsResolveModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
