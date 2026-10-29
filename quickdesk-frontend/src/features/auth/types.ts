@@ -49,3 +49,7 @@ export type AuthUser = {
   email: string;
   role: UserRole;
 };
+
+export type LoginResponse = {
+  role: UserRole;
+};

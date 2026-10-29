@@ -17,7 +17,7 @@ export default function LoginForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -27,15 +27,22 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      await loginMutation.mutateAsync(data);
+    loginMutation.reset();
 
-      // Temporary until current-user/role retrieval exists.
-      navigate("/employee", { replace: true });
+    try {
+      const response = await loginMutation.mutateAsync(data);
+
+      if (response.role === "AGENT") {
+        navigate("/agent", { replace: true });
+      } else if (response.role === "EMPLOYEE") {
+        navigate("/employee", { replace: true });
+      }
     } catch {
-      // TanStack Query exposes the error through mutation.error.
+      // TanStack Query exposes errors via loginMutation.error.
     }
   };
+
+  const isLoading = isSubmitting || loginMutation.isPending;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
@@ -52,7 +59,7 @@ export default function LoginForm() {
         placeholder="you@company.com"
         autoComplete="email"
         error={errors.email?.message}
-        disabled={loginMutation.isPending}
+        disabled={isLoading}
         {...register("email")}
       />
 
@@ -63,16 +70,12 @@ export default function LoginForm() {
         placeholder="Enter your password"
         autoComplete="current-password"
         error={errors.password?.message}
-        disabled={loginMutation.isPending}
+        disabled={isLoading}
         {...register("password")}
       />
 
-      <Button
-        type="submit"
-        loading={loginMutation.isPending}
-        className="w-full"
-      >
-        {loginMutation.isPending ? "Logging in..." : "Login"}
+      <Button type="submit" loading={isLoading} className="w-full">
+        {isLoading ? "Logging in..." : "Login"}
       </Button>
 
       <p className="text-sm text-muted">

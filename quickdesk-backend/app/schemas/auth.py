@@ -10,6 +10,7 @@ class Session(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    role: UserRole
 
 class UserLogin(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True, extra="forbid")

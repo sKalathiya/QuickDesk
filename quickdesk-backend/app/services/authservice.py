@@ -49,7 +49,7 @@ async def login_user(user: UserLogin, db: AsyncSession) -> Token:
     
     payload = {"id": str(db_user.id), "exp": time.time() + settings.JWT_EXPIRATION_TIME, "jti": str(uuid.uuid4())}
     access_token = create_access_token(payload)
-    return Token(access_token=access_token)
+    return Token(access_token=access_token, role=db_user.role)
 
 
 async def logout_user(session: Session, response: Response, db: AsyncSession, notification_manager: NotificationManager) -> None:
