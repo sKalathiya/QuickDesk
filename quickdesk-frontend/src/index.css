@@ -1,111 +1,287 @@
+@import "tailwindcss";
+
+/* Class-based dark mode. Light is the default; set data-theme="dark" on <html> to switch. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+  Static foundations. Semantic colors below reference these Tailwind palette steps
+  so product UI does not hardcode one-off hex values.
+*/
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Code", ui-monospace, Consolas, monospace;
+
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/*
+  Runtime semantic tokens. @theme inline keeps utilities bound to these variables,
+  so light and dark values can change without rebuilding.
+*/
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  color-scheme: light;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --qd-canvas: var(--color-gray-50);
+  --qd-canvas-subtle: var(--color-gray-100);
+  --qd-surface: var(--color-white);
+  --qd-surface-muted: var(--color-gray-50);
+  --qd-foreground: var(--color-gray-900);
+  --qd-muted: var(--color-gray-600);
+  --qd-subtle: var(--color-gray-500);
+  --qd-border: var(--color-gray-200);
+  --qd-border-strong: var(--color-gray-300);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --qd-brand: var(--color-indigo-600);
+  --qd-brand-hover: var(--color-indigo-700);
+  --qd-brand-active: var(--color-indigo-800);
+  --qd-brand-foreground: var(--color-white);
+  --qd-brand-subtle: var(--color-indigo-50);
+  --qd-brand-muted: var(--color-indigo-700);
+  --qd-focus: var(--color-indigo-600);
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --qd-success: var(--color-green-800);
+  --qd-success-subtle: var(--color-green-50);
+  --qd-warning: var(--color-amber-800);
+  --qd-warning-subtle: var(--color-amber-50);
+  --qd-danger: var(--color-red-700);
+  --qd-danger-hover: var(--color-red-800);
+  --qd-danger-subtle: var(--color-red-50);
+  --qd-danger-foreground: var(--color-white);
+  --qd-info: var(--color-blue-800);
+  --qd-info-subtle: var(--color-blue-50);
+
+  --qd-status-open: var(--color-blue-800);
+  --qd-status-open-subtle: var(--color-blue-50);
+  --qd-status-resolved: var(--color-green-800);
+  --qd-status-resolved-subtle: var(--color-green-50);
+
+  --qd-priority-low: var(--color-teal-800);
+  --qd-priority-low-subtle: var(--color-teal-50);
+  --qd-priority-medium: var(--color-amber-800);
+  --qd-priority-medium-subtle: var(--color-amber-50);
+  --qd-priority-high: var(--color-red-700);
+  --qd-priority-high-subtle: var(--color-red-50);
+
+  --qd-category-it: var(--color-blue-800);
+  --qd-category-it-subtle: var(--color-blue-50);
+  --qd-category-hr: var(--color-violet-800);
+  --qd-category-hr-subtle: var(--color-violet-50);
+  --qd-category-finance: var(--color-teal-800);
+  --qd-category-finance-subtle: var(--color-teal-50);
+  --qd-category-admin: var(--color-amber-800);
+  --qd-category-admin-subtle: var(--color-amber-50);
+
+  --qd-shadow: oklch(0.21 0.03 264 / 0.06);
+  --qd-shadow-strong: oklch(0.21 0.03 264 / 0.1);
+  --qd-shadow-xs: 0 1px 2px var(--qd-shadow);
+  --qd-shadow-sm: 0 1px 2px var(--qd-shadow), 0 2px 6px var(--qd-shadow);
+  --qd-shadow-md: 0 8px 20px var(--qd-shadow-strong);
+  --qd-shadow-lg: 0 16px 40px var(--qd-shadow-strong);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --qd-canvas: var(--color-gray-950);
+  --qd-canvas-subtle: var(--color-gray-900);
+  --qd-surface: var(--color-gray-900);
+  --qd-surface-muted: var(--color-gray-800);
+  --qd-foreground: var(--color-gray-50);
+  --qd-muted: var(--color-gray-300);
+  --qd-subtle: var(--color-gray-400);
+  --qd-border: var(--color-gray-800);
+  --qd-border-strong: var(--color-gray-700);
+
+  --qd-brand: var(--color-indigo-600);
+  --qd-brand-hover: var(--color-indigo-500);
+  --qd-brand-active: var(--color-indigo-700);
+  --qd-brand-foreground: var(--color-white);
+  --qd-brand-subtle: color-mix(
+    in oklch,
+    var(--color-indigo-400) 16%,
+    transparent
+  );
+  --qd-brand-muted: var(--color-indigo-300);
+  --qd-focus: var(--color-indigo-400);
+
+  --qd-success: var(--color-green-300);
+  --qd-success-subtle: color-mix(
+    in oklch,
+    var(--color-green-400) 16%,
+    transparent
+  );
+  --qd-warning: var(--color-amber-200);
+  --qd-warning-subtle: color-mix(
+    in oklch,
+    var(--color-amber-400) 16%,
+    transparent
+  );
+  --qd-danger: var(--color-red-300);
+  --qd-danger-hover: var(--color-red-400);
+  --qd-danger-subtle: color-mix(
+    in oklch,
+    var(--color-red-400) 16%,
+    transparent
+  );
+  --qd-danger-foreground: var(--color-red-950);
+  --qd-info: var(--color-blue-300);
+  --qd-info-subtle: color-mix(in oklch, var(--color-blue-400) 16%, transparent);
+
+  --qd-status-open: var(--color-blue-300);
+  --qd-status-open-subtle: color-mix(
+    in oklch,
+    var(--color-blue-400) 16%,
+    transparent
+  );
+  --qd-status-resolved: var(--color-green-300);
+  --qd-status-resolved-subtle: color-mix(
+    in oklch,
+    var(--color-green-400) 16%,
+    transparent
+  );
+
+  --qd-priority-low: var(--color-teal-300);
+  --qd-priority-low-subtle: color-mix(
+    in oklch,
+    var(--color-teal-400) 16%,
+    transparent
+  );
+  --qd-priority-medium: var(--color-amber-200);
+  --qd-priority-medium-subtle: color-mix(
+    in oklch,
+    var(--color-amber-400) 16%,
+    transparent
+  );
+  --qd-priority-high: var(--color-red-300);
+  --qd-priority-high-subtle: color-mix(
+    in oklch,
+    var(--color-red-400) 16%,
+    transparent
+  );
+
+  --qd-category-it: var(--color-blue-300);
+  --qd-category-it-subtle: color-mix(
+    in oklch,
+    var(--color-blue-400) 16%,
+    transparent
+  );
+  --qd-category-hr: var(--color-violet-300);
+  --qd-category-hr-subtle: color-mix(
+    in oklch,
+    var(--color-violet-400) 16%,
+    transparent
+  );
+  --qd-category-finance: var(--color-teal-300);
+  --qd-category-finance-subtle: color-mix(
+    in oklch,
+    var(--color-teal-400) 16%,
+    transparent
+  );
+  --qd-category-admin: var(--color-amber-200);
+  --qd-category-admin-subtle: color-mix(
+    in oklch,
+    var(--color-amber-400) 16%,
+    transparent
+  );
+
+  --qd-shadow: oklch(0 0 0 / 0.35);
+  --qd-shadow-strong: oklch(0 0 0 / 0.55);
+}
+
+@theme inline {
+  --color-canvas: var(--qd-canvas);
+  --color-canvas-subtle: var(--qd-canvas-subtle);
+  --color-surface: var(--qd-surface);
+  --color-surface-muted: var(--qd-surface-muted);
+  --color-foreground: var(--qd-foreground);
+  --color-muted: var(--qd-muted);
+  --color-subtle: var(--qd-subtle);
+  --color-border: var(--qd-border);
+  --color-border-strong: var(--qd-border-strong);
+
+  --color-brand: var(--qd-brand);
+  --color-brand-hover: var(--qd-brand-hover);
+  --color-brand-active: var(--qd-brand-active);
+  --color-brand-foreground: var(--qd-brand-foreground);
+  --color-brand-subtle: var(--qd-brand-subtle);
+  --color-brand-muted: var(--qd-brand-muted);
+  --color-focus: var(--qd-focus);
+
+  --color-success: var(--qd-success);
+  --color-success-subtle: var(--qd-success-subtle);
+  --color-warning: var(--qd-warning);
+  --color-warning-subtle: var(--qd-warning-subtle);
+  --color-danger: var(--qd-danger);
+  --color-danger-hover: var(--qd-danger-hover);
+  --color-danger-subtle: var(--qd-danger-subtle);
+  --color-danger-foreground: var(--qd-danger-foreground);
+  --color-info: var(--qd-info);
+  --color-info-subtle: var(--qd-info-subtle);
+
+  --color-status-open: var(--qd-status-open);
+  --color-status-open-subtle: var(--qd-status-open-subtle);
+  --color-status-resolved: var(--qd-status-resolved);
+  --color-status-resolved-subtle: var(--qd-status-resolved-subtle);
+
+  --color-priority-low: var(--qd-priority-low);
+  --color-priority-low-subtle: var(--qd-priority-low-subtle);
+  --color-priority-medium: var(--qd-priority-medium);
+  --color-priority-medium-subtle: var(--qd-priority-medium-subtle);
+  --color-priority-high: var(--qd-priority-high);
+  --color-priority-high-subtle: var(--qd-priority-high-subtle);
+
+  --color-category-it: var(--qd-category-it);
+  --color-category-it-subtle: var(--qd-category-it-subtle);
+  --color-category-hr: var(--qd-category-hr);
+  --color-category-hr-subtle: var(--qd-category-hr-subtle);
+  --color-category-finance: var(--qd-category-finance);
+  --color-category-finance-subtle: var(--qd-category-finance-subtle);
+  --color-category-admin: var(--qd-category-admin);
+  --color-category-admin-subtle: var(--qd-category-admin-subtle);
+
+  --shadow-xs: var(--qd-shadow-xs);
+  --shadow-sm: var(--qd-shadow-sm);
+  --shadow-md: var(--qd-shadow-md);
+  --shadow-lg: var(--qd-shadow-lg);
+}
+
+@layer base {
+  body {
+    min-height: 100svh;
+    background-color: var(--color-canvas);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm--line-height);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  ::placeholder {
+    color: var(--color-subtle);
+    opacity: 1;
   }
-}
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+  ::selection {
+    background-color: var(--color-brand-subtle);
+    color: var(--color-foreground);
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }
