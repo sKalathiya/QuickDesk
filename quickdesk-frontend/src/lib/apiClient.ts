@@ -68,6 +68,14 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      endpoint !== "/auth/login" &&
+      window.location.pathname !== "/login"
+    ) {
+      window.location.replace("/login");
+    }
+
     throw new ApiError(getErrorMessage(data), response.status);
   }
 

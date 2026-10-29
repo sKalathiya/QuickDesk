@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { Button } from "../ui/Button";
+import UserProfile from "../../features/auth/components/UserProfile";
 
 export default function EmployeeLayout() {
   return (
@@ -28,9 +28,7 @@ export default function EmployeeLayout() {
             </NavLink>
           </nav>
 
-          <Button variant="secondary" size="md">
-            Logout
-          </Button>
+          <UserProfile />
         </header>
 
         <div className="w-full rounded-xl border border-border bg-surface p-4 sm:p-6">

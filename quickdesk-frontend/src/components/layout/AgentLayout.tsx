@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from "react-router";
 
-import { Button } from "../ui/Button";
+import UserProfile from "../../features/auth/components/UserProfile";
 
 export default function AgentLayout() {
   return (
@@ -45,9 +45,7 @@ export default function AgentLayout() {
             </NavLink>
           </nav>
 
-          <Button type="button" variant="secondary" size="md">
-            Logout
-          </Button>
+          <UserProfile />
         </header>
 
         <div className="w-full rounded-xl border border-border bg-surface p-4 sm:p-6">
