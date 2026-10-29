@@ -12,6 +12,7 @@ from app.schemas.auth import Session
 from app.exceptions.ticket_exceptios import TicketInvalidIDException
 from fastapi import HTTPException
 from starlette import status
+from sqlalchemy import select
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -26,3 +27,11 @@ async def handle_get_logs(ticket_id: str, session: Session = Depends(get_current
         return await get_ticket_logs(db, ticket_id)
     except TicketInvalidIDException as e: 
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)) from e
+
+@router.get("/current-user", response_model=UserResponse)
+async def handle_get_current_user(session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.id == session.user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return UserResponse.model_validate(user)
