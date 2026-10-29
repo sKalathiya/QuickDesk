@@ -10,6 +10,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 import EmployeeHomePage from "../features/employe/pages/EmployeeHomePage";
 import AgentDashboardPage from "../features/agents/pages/AgentDashboardPage";
 import AgentTicketDetailPage from "../features/agents/pages/AgentTicketDetailPage";
+import AgentMetricsPage from "../features/agents/pages/AgentMetricsPage";
 
 export default function AppRoutes() {
   return (
@@ -25,7 +26,10 @@ export default function AppRoutes() {
 
       <Route path="/agent" element={<AgentLayout />}>
         <Route index element={<AgentDashboardPage />} />
+
         <Route path="tickets/:ticketId" element={<AgentTicketDetailPage />} />
+
+        <Route path="metrics" element={<AgentMetricsPage />} />
       </Route>
     </Routes>
   );

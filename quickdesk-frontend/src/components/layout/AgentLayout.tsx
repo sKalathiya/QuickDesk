@@ -11,7 +11,10 @@ export default function AgentLayout() {
             QuickDesk
           </h1>
 
-          <nav aria-label="Agent navigation">
+          <nav
+            aria-label="Agent navigation"
+            className="flex items-center gap-2"
+          >
             <NavLink
               to="/agent"
               end
@@ -25,6 +28,20 @@ export default function AgentLayout() {
               }
             >
               Tickets
+            </NavLink>
+
+            <NavLink
+              to="/agent/metrics"
+              className={({ isActive }) =>
+                [
+                  "rounded-md px-4 py-2 text-sm font-semibold transition-colors",
+                  isActive
+                    ? "bg-surface-muted text-foreground"
+                    : "text-muted hover:bg-surface-muted hover:text-foreground",
+                ].join(" ")
+              }
+            >
+              Metrics
             </NavLink>
           </nav>
 

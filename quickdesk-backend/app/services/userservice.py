@@ -59,7 +59,7 @@ async def get_dashboard(db: AsyncSession) -> DashBoardResponse:
     stmt = select(func.count(AgentLogs.id).label("total_logs_overridden")).where(AgentLogs.ai_override == True, AgentLogs.log_type == LogType.CATEGORY_CHANGE)
     result = (await db.scalar(stmt))
     total_logs_overridden = result if result is not None else 0
-    stmt = select(func.count(Ticket.id).label("total_tickets_overridden")).where(or_(Ticket.ai_category.isnot(TicketCategory.NOT_SPECIFIED)))
+    stmt = select(func.count(Ticket.id).label("total_tickets_overridden")).where(Ticket.ai_category != TicketCategory.NOT_SPECIFIED)
     result = (await db.scalar(stmt))
     total_tickets_classified_by_ai = result if result is not None else 0
     agent_overridden_tickets_percentage = (total_logs_overridden / total_tickets_classified_by_ai) * 100 if total_tickets_classified_by_ai > 0 else 0
