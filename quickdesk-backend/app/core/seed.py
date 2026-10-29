@@ -8,7 +8,7 @@ import asyncio
 from app.core.database import engine
 import os
 
-DOCS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "docs")   
+DOCS_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "knowledge-base")   
 
 #seed a agent user directly into the database
 async def seed_agent_user():
@@ -26,5 +26,5 @@ async def seed_docs():
     await load_docs(DOCS_PATH)
 
 if __name__ == "__main__":
-    asyncio.run(seed_agent_user())
-    asyncio.run(seed_docs())
+    #asyncio.run(seed_agent_user(), loop_factory=asyncio.SelectorEventLoop)
+    asyncio.run(seed_docs(), loop_factory=asyncio.SelectorEventLoop)

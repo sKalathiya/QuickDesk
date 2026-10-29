@@ -14,6 +14,9 @@ from app.rag.agent import get_classification
 from app.rag.agent import get_answer
 from app.rag.agent import Answer
 from sqlalchemy import update
+from sqlalchemy import or_
+from sqlalchemy import case
+from app.models.ticket import TicketCategory, TicketPriority
 
 
 async def create_ticket(ticket: TicketCreate, session: Session, db: AsyncSession, notification_manager: NotificationManager) -> TicketResponse:
@@ -80,9 +83,23 @@ async def get_all_tickets(session: Session, db: AsyncSession, ticket_filter: Tic
     # Employees only see their own tickets; other roles see the full list.
     filters = []
     if ticket_filter.category:
-        filters.append(Ticket.category == ticket_filter.category)
+        effective_category = case(
+    (
+        Ticket.category != TicketCategory.NOT_SPECIFIED,
+        Ticket.category,
+    ),
+    else_=Ticket.ai_category,
+)
+        filters.append(effective_category == ticket_filter.category)
     if ticket_filter.priority:
-        filters.append(Ticket.priority == ticket_filter.priority)
+        effective_priority = case(
+    (
+        Ticket.priority != TicketPriority.NOT_SPECIFIED,
+        Ticket.priority,
+    ),
+    else_=Ticket.ai_priority,
+)
+        filters.append(effective_priority == ticket_filter.priority)
     if ticket_filter.status:
         filters.append(Ticket.status == ticket_filter.status)
     if ticket_filter.title:

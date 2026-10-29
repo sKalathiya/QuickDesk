@@ -39,7 +39,9 @@ export default function CreateTicketModal({ onClose }: CreateTicketModalProps) {
 
     if (!dialog) return;
 
-    dialog.showModal();
+    if (!dialog.open) {
+      dialog.showModal();
+    }
 
     return () => {
       if (dialog.open) {
@@ -80,11 +82,9 @@ export default function CreateTicketModal({ onClose }: CreateTicketModalProps) {
       aria-describedby="create-ticket-description"
       onClick={handleBackdropClick}
       onCancel={(event) => {
-        if (isLoading) {
-          event.preventDefault();
-        }
+        event.preventDefault();
+        handleClose();
       }}
-      onClose={onClose}
       className="
         fixed inset-0 m-auto
         max-h-[calc(100dvh-2rem)]
