@@ -1,35 +1,41 @@
-import { Link, Outlet, useLocation } from "react-router";
+import { NavLink, Outlet } from "react-router";
 import { Button } from "../ui/Button";
 
 export default function EmployeeLayout() {
-  const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
   return (
-    <main className="min-h-screen bg-canvas flex flex-col items-center justify-start p-6 space-y-8">
-      <header className="flex items-center justify-between p-4 border border-border rounded-xl w-full max-w-7xl bg-surface">
-        <h1 className="text-2xl font-bold tracking-wide text-brand ">
-          QuickDesk
-        </h1>
-        <nav className="flex items-center gap-2">
-          <Link
-            to="/employee/tickets"
-            className={
-              isActive("/employee/tickets")
-                ? "font-semibold text-foreground bg-surface-muted rounded-md px-4 py-2 text-md tracking-wide"
-                : "text-foreground font-semibold hover:bg-surface-muted rounded-md px-4 py-2 text-md tracking-wide"
-            }
-          >
-            Tickets
-          </Link>
-        </nav>
-        <div className="flex items-center gap-2">
+    <main className="min-h-screen bg-canvas px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+        <header className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4">
+          <h1 className="text-2xl font-bold tracking-wide text-brand">
+            QuickDesk
+          </h1>
+
+          <nav aria-label="Employee navigation">
+            <NavLink
+              to="/employee"
+              end
+              className={({ isActive }) =>
+                [
+                  "rounded-md px-4 py-2 text-sm font-semibold",
+                  "transition-colors",
+                  isActive
+                    ? "bg-surface-muted text-foreground"
+                    : "text-muted hover:bg-surface-muted hover:text-foreground",
+                ].join(" ")
+              }
+            >
+              Tickets
+            </NavLink>
+          </nav>
+
           <Button variant="secondary" size="md">
             Logout
           </Button>
+        </header>
+
+        <div className="w-full rounded-xl border border-border bg-surface p-4 sm:p-6">
+          <Outlet />
         </div>
-      </header>
-      <div className="w-full max-w-7xl rounded-xl border border-border bg-surface flex flex-col items-center justify-start p-4">
-        <Outlet />
       </div>
     </main>
   );
