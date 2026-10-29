@@ -3,10 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from fastapi import HTTPException
 from app.core.security import hash_password
 from sqlalchemy import insert
-from app.core.config import DOCS_PATH
-from app.rag import load_docs
+from app.rag.docs import load_docs
 import asyncio
 from app.core.database import engine
+import os
+
+DOCS_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "docs")   
 
 #seed a agent user directly into the database
 async def seed_agent_user():

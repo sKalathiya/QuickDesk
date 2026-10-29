@@ -32,14 +32,14 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)) -> User
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
    
 
-@router.post("/login" , status_code=status.HTTP_200_OK, response_model=UserRole)
+@router.post("/login" , status_code=status.HTTP_200_OK, response_model=dict)
 async def login(user: UserLogin, response: Response, db: AsyncSession = Depends(get_db)):
     try:
         token =  await login_user(user, db)
     except InvalidCredentialsException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from e
     response.set_cookie(key="access_token", value=token.access_token, httponly=True, samesite="strict", secure=True)
-    return token.role
+    return {"role": token.role.value.upper()}
 
 @router.post("/logout", status_code = status.HTTP_200_OK)
 async def logout(response: Response, session: Session = Depends(get_current_user), db: AsyncSession = Depends(get_db), notification_manager: NotificationManager = Depends(get_notification_manager)) -> None:
