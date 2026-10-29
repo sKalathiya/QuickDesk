@@ -19,7 +19,7 @@ export async function getAgentTickets(
 ): Promise<TicketListResponse> {
   const params = new URLSearchParams({
     page: String(page),
-    page_size: "20",
+    page_size: "1",
   });
 
   if (filters.status) params.set("status", filters.status);
