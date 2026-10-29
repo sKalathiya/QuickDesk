@@ -1,10 +1,12 @@
 import { NavLink, Outlet } from "react-router";
 
 import UserProfile from "../../features/auth/components/UserProfile";
+import LiveNotifications from "../../features/notifiations/components/LiveNotifications";
 
 export default function AgentLayout() {
   return (
     <main className="min-h-screen bg-canvas px-4 py-6 sm:px-6">
+      <LiveNotifications role="AGENT" />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4">
           <h1 className="text-2xl font-bold tracking-wide text-brand">

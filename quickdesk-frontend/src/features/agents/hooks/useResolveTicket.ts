@@ -45,6 +45,9 @@ export function useResolveTicket(ticketId: string) {
         queryClient.invalidateQueries({
           queryKey: ["agent", "ticket", ticketId, "logs"],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ["agent", "metrics"],
+        }),
       ]);
     },
   });
